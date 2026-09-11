@@ -1,0 +1,19 @@
+[
+  "current_u",
+  "current_v",
+  "current_speed",
+  "current_dir",
+  "wind_u",
+  "wind_v",
+  "wind_speed",
+  "wind_gust",
+  "wind_dir",
+  "slp",
+  "rain_rate_mm_hr",
+  "delta_p_3h",
+  "wind_current_alignment",
+  "hour_sin",
+  "hour_cos",
+  "doy_sin",
+  "doy_cos"
+]

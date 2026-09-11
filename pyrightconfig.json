@@ -1,0 +1,18 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "include": [
+    "."
+  ],
+  "extraPaths": [
+    ".",
+    "src",
+    "src/ingest",
+    "src/features",
+    "src/models",
+    "src/validation",
+    "src/labels",
+    "src/serve",
+    ".venv/Lib/site-packages"
+  ]
+}

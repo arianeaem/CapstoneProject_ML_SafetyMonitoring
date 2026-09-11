@@ -1,0 +1,16 @@
+[
+  "wind_u",
+  "wind_v",
+  "wind_speed",
+  "wind_gust",
+  "wind_dir",
+  "slp",
+  "rain_rate_mm_hr",
+  "wave_steepness",
+  "swell_ratio",
+  "delta_p_3h",
+  "hour_sin",
+  "hour_cos",
+  "doy_sin",
+  "doy_cos"
+]

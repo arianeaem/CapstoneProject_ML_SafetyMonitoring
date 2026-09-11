@@ -1,0 +1,14 @@
+[
+  "pred_hs",
+  "pred_tp",
+  "pred_swell_height",
+  "pred_wind_wave_height",
+  "pred_wind_speed",
+  "pred_wind_gust",
+  "pred_delta_p_3h",
+  "pred_wind_dir",
+  "pred_current_u",
+  "pred_current_v",
+  "pred_current_speed",
+  "pred_current_dir"
+]

@@ -1,0 +1,35 @@
+{
+  "hyperparameters": {
+    "n_estimators": 275,
+    "max_depth": 4,
+    "learning_rate": 0.013187418684837105,
+    "subsample": 0.688403495831407,
+    "colsample_bytree": 0.64373660233356,
+    "reg_alpha": 0.06501886485186834,
+    "reg_lambda": 0.4524446128077887,
+    "objective": "reg:squarederror",
+    "tree_method": "hist",
+    "random_state": 42
+  },
+  "validation_metrics": {
+    "current_u": {
+      "rmse": 0.06530216246675907,
+      "mae": 0.05445941914371943,
+      "bias": 0.03876633599085458
+    },
+    "current_v": {
+      "rmse": 0.043153413731311145,
+      "mae": 0.03430351890604711,
+      "bias": -0.01631600864125432
+    },
+    "current_speed": {
+      "rmse": 0.06753428904443794,
+      "mae": 0.05629466436598187,
+      "bias": -0.03558837816323426
+    },
+    "current_dir": {
+      "circular_rmse_deg": 39.93556313330773,
+      "circular_mae_deg": 18.708750318839932
+    }
+  }
+}

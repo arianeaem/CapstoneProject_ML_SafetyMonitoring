@@ -1,0 +1,14 @@
+[
+  "current_u",
+  "current_v",
+  "current_speed",
+  "current_dir",
+  "slp",
+  "rain_rate_mm_hr",
+  "wave_steepness",
+  "swell_ratio",
+  "hour_sin",
+  "hour_cos",
+  "doy_sin",
+  "doy_cos"
+]
