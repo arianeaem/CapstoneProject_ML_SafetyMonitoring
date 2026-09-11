@@ -136,6 +136,87 @@ def test_pagasa_override():
     print()
 
 
+def test_assess_booking_calm():
+    print("Test 5: /assess-booking with calm session (08:00 - 12:00) — Laravel integration")
+    start = datetime(2026, 9, 15, 6, 0, 0)
+    boundary_weather = []
+    for i in range(8):  # 06:00 to 13:00
+        boundary_weather.append({
+            "timestamp": (start + timedelta(hours=i)).isoformat(),
+            "wind_speed": 3.0 + 0.1 * i,
+            "wind_gust": 4.5 + 0.1 * i,
+            "wind_dir": 90.0,
+            "slp": 1012.0,
+            "rain_rate_mm_hr": 0.0,
+        })
+
+    payload = {
+        "planned_date": "2026-09-15",
+        "dive_start": "08:00",
+        "dive_end": "12:00",
+        "boundary_weather": boundary_weather,
+    }
+
+    r = requests.post(f"{BASE_URL}/assess-booking", json=payload)
+    check("request succeeds with HTTP 200", r.status_code == 200, r.text[:300])
+    if r.status_code != 200:
+        print()
+        return
+
+    body = r.json()
+    check("returns session_duration_hours == 5 (08:00 to 12:00 inclusive)",
+          body["session_duration_hours"] == 5, f"got {body['session_duration_hours']}")
+    check("worst_hour exists and is populated",
+          "worst_hour" in body and body["worst_hour"]["hour"] >= 8, str(body.get("worst_hour")))
+    check("overall_recommendation is valid",
+          body["overall_recommendation"] in ["GO", "PROVISIONAL_GO", "CAUTION_ADVANCED_ONLY", "HIGH_RISK_NO_GO", "NO_GO"],
+          body["overall_recommendation"])
+    check("currents automatically populated from cache/climatology",
+          all("current_source" in h for h in body["hourly_assessments"]))
+    print(f"  Overall: {body['overall_recommendation']} ({body['overall_operational_status']}), "
+          f"Worst Hour: {body['worst_hour']['timestamp']} ({body['worst_hour']['final_tier_name']})")
+    print()
+
+
+def test_assess_booking_hard_gate():
+    print("Test 6: /assess-booking with storm wind breach at 10:00 — forces NO_GO")
+    start = datetime(2026, 9, 15, 6, 0, 0)
+    boundary_weather = []
+    for i in range(8):  # 06:00 to 13:00
+        hour_ts = start + timedelta(hours=i)
+        wind = 12.0 if hour_ts.hour == 10 else 3.0  # 12 m/s = 43.2 km/h (> 38 km/h hard gate)
+        boundary_weather.append({
+            "timestamp": hour_ts.isoformat(),
+            "wind_speed": wind,
+            "wind_gust": wind * 1.3,
+            "wind_dir": 90.0,
+            "slp": 1012.0,
+            "rain_rate_mm_hr": 0.0,
+        })
+
+    payload = {
+        "planned_date": "2026-09-15",
+        "dive_start": "08:00",
+        "dive_end": "12:00",
+        "boundary_weather": boundary_weather,
+    }
+
+    r = requests.post(f"{BASE_URL}/assess-booking", json=payload)
+    check("request succeeds with HTTP 200", r.status_code == 200, r.text[:300])
+    if r.status_code != 200:
+        print()
+        return
+
+    body = r.json()
+    check("overall_hard_gate_triggered is True", body["overall_hard_gate_triggered"] is True)
+    check("overall_recommendation is NO_GO", body["overall_recommendation"] == "NO_GO", body["overall_recommendation"])
+    check("worst_hour identifies 10:00 storm breach",
+          body["worst_hour"]["hour"] == 10 and body["worst_hour"]["hard_gate_triggered"] is True,
+          str(body["worst_hour"]))
+    print(f"  Identified Worst Hour: {body['worst_hour']['timestamp']} — {body['worst_hour']['primary_hazard']}")
+    print()
+
+
 if __name__ == "__main__":
     print("=" * 70)
     print("LIVE SERVICE END-TO-END TEST — requires uvicorn already running")
@@ -144,6 +225,9 @@ if __name__ == "__main__":
     test_calm_batch()
     test_hard_gate_trigger()
     test_pagasa_override()
+    test_assess_booking_calm()
+    test_assess_booking_hard_gate()
     print("=" * 70)
     print("Done. Review any [FAIL] lines above before trusting this service.")
     print("=" * 70)
+
