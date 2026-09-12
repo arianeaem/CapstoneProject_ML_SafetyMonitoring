@@ -31,9 +31,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ONNX_DIR = PROJECT_ROOT / "models" / "onnx"
 
-from src.models.train_safety_classifier import WAVE_TARGETS, WIND_TARGETS
+from src.models.train_safety_classifier import WAVE_TARGETS
 from src.serve.hard_gate import apply_hard_gate, evaluate_operational_safety, TIER_NAMES
 from src.serve.currents_cache import get_live_currents_forecast
+
+WIND_REGRESSOR_TARGETS = ["wind_speed", "wind_gust", "delta_p_3h"]
 
 app = FastAPI(
     title="Camp FreedivePH Weather Safety & Booking Assessment Service",
@@ -62,7 +64,7 @@ FEATURE_ORDER = {}
 def load_models():
     model_names = (
         [f"xgb_wave_regressor_{t}" for t in WAVE_TARGETS]
-        + [f"xgb_wind_regressor_{t}" for t in WIND_TARGETS]
+        + [f"xgb_wind_regressor_{t}" for t in WIND_REGRESSOR_TARGETS]
         + ["xgb_wind_regressor_wind_dir_sin", "xgb_wind_regressor_wind_dir_cos"]
         + ["xgb_current_regressor_current_u", "xgb_current_regressor_current_v"]
         + ["xgb_safety_classifier"]
@@ -326,7 +328,7 @@ def _run_inference_pipeline(raw_df: pd.DataFrame, pagasa_dict: Optional[dict]):
     X_wind = valid[wind_feats].values
     X_current = valid[current_feats].values
 
-    for target in WIND_TARGETS:
+    for target in WIND_REGRESSOR_TARGETS:
         preds[target] = run_onnx(f"xgb_wind_regressor_{target}", X_wind)
     pred_sin = run_onnx("xgb_wind_regressor_wind_dir_sin", X_wind)
     pred_cos = run_onnx("xgb_wind_regressor_wind_dir_cos", X_wind)
@@ -450,6 +452,7 @@ def assess_booking(request: BookingAssessmentRequest):
         telemetry = {
             "wind_speed": float(preds["wind_speed"][i]),
             "wind_gust": float(preds["wind_gust"][i]),
+            "delta_p_3h": float(valid.loc[i, "delta_p_3h"]) if "delta_p_3h" in valid.columns else 0.0,
             "hs": float(preds["hs"][i]),
             "swell_height": float(preds["swell_height"][i]),
             "current_speed": float(preds["current_speed"][i]),
@@ -532,24 +535,27 @@ def assess_booking(request: BookingAssessmentRequest):
     else:
         overall_op_status = "EXTENDED_TREND_OUTLOOK"
 
-    # Determine recommendation
+    # Determine 5-tier recommendation directly matching platform safety classifications
     if any_hard_gate or max_tier == 4:
-        overall_recommendation = "NO_GO"
+        overall_recommendation = "Critical Risk"
+        operational_action = "NO_GO"
         is_authoritative_go = False
     elif max_tier == 3:
-        overall_recommendation = "HIGH_RISK_NO_GO"
+        overall_recommendation = "High Risk"
+        operational_action = "HIGH_RISK_NO_GO"
         is_authoritative_go = False
     elif max_tier == 2:
-        overall_recommendation = "CAUTION_ADVANCED_ONLY"
+        overall_recommendation = "Moderate"
+        operational_action = "CAUTION_ADVANCED_ONLY"
         is_authoritative_go = False
+    elif max_tier == 1:
+        overall_recommendation = "Safe"
+        operational_action = "PROVISIONAL_GO" if overall_op_status != "TACTICAL_CLEARANCE" else "GO"
+        is_authoritative_go = (overall_op_status == "TACTICAL_CLEARANCE")
     else:
-        # Tier 0 (Very Safe) or Tier 1 (Safe)
-        if overall_op_status == "TACTICAL_CLEARANCE":
-            overall_recommendation = "GO"
-            is_authoritative_go = True
-        else:
-            overall_recommendation = "PROVISIONAL_GO"
-            is_authoritative_go = False
+        overall_recommendation = "Very Safe"
+        operational_action = "PROVISIONAL_GO" if overall_op_status != "TACTICAL_CLEARANCE" else "GO"
+        is_authoritative_go = (overall_op_status == "TACTICAL_CLEARANCE")
 
     displayed_risk_tier = worst.displayed_tier
     displayed_risk_name = worst.displayed_tier_name

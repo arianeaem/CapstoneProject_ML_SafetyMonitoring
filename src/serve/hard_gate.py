@@ -43,7 +43,7 @@ PROVISIONAL_CUTOFF_HORIZON_HOURS = 24
 
 
 def check_physical_breach(telemetry: dict) -> tuple[bool, list[str]]:
-    """telemetry keys expected: wind_speed, wind_gust (m/s), hs, swell_height (m),
+    """telemetry keys expected: wind_speed, wind_gust (m/s), delta_p_3h (hPa), hs, swell_height (m),
     current_speed (m/s), rain_rate_mm_hr (mm/hr), slp (hPa). Same units as the
     trained forecasters' outputs."""
     reasons = []
@@ -66,6 +66,23 @@ def check_physical_breach(telemetry: dict) -> tuple[bool, list[str]]:
                         f"{HARD_GATE['rain_mm_hr']} mm/hr limit")
     if telemetry.get("slp", 1013.25) <= HARD_GATE["pressure_hpa"]:
         reasons.append(f"pressure {telemetry['slp']:.1f} hPa <= {HARD_GATE['pressure_hpa']} hPa limit")
+
+    # Context-Aware Compound Precursor Check:
+    # A rapid 3-hour barometric drop (>= 2.5 hPa / 3h) requires companion storm indicators
+    # (Squall Gusts >= 38.0 km/h [10.56 m/s] OR Rain Rate >= 15.0 mm/hr) to trigger an emergency breach.
+    # Normal tropical diurnal solar heating drops (1.5 - 2.0 hPa) on calm sunny days do NOT trigger a false alarm.
+    delta_p = telemetry.get("delta_p_3h", 0.0)
+    pressure_drop = abs(delta_p) if delta_p < 0 else delta_p
+    wind_gust_ms = telemetry.get("wind_gust", 0.0)
+    rain_rate = telemetry.get("rain_rate_mm_hr", 0.0)
+    squall_gust_threshold_ms = 38.0 * KMH_TO_MS  # 10.56 m/s (38 km/h)
+    storm_rain_threshold_mm = 15.0  # 15.0 mm/hr
+
+    if pressure_drop >= 2.5 and (wind_gust_ms >= squall_gust_threshold_ms or rain_rate >= storm_rain_threshold_mm):
+        reasons.append(
+            f"rapid barometric drop ({pressure_drop:.1f} hPa/3h) with accompanying squalls/rain "
+            f"({wind_gust_ms * 3.6:.1f} km/h gusts, {rain_rate:.1f} mm/hr rain)"
+        )
 
     return len(reasons) > 0, reasons
 
@@ -283,6 +300,26 @@ def _run_tests():
           op30["operational_status"] == "EXTENDED_TREND_OUTLOOK" and not op30["is_safety_verdict_active"] and op30["displayed_tier"] is None,
           f"got {op30}")
 
+    # 18. Diurnal solar heating barometric drop on calm sunny day (no companion storm indicators) -> NO false alarm breach
+    calm_diurnal_drop = {**calm, "delta_p_3h": -2.8, "wind_gust": 4.0, "rain_rate_mm_hr": 0.0}
+    r_diurnal = apply_hard_gate(0, calm_diurnal_drop)
+    check("Diurnal solar pressure drop (-2.8 hPa) on calm sunny day does NOT trigger false alarm breach",
+          r_diurnal["final_tier"] == 0 and not r_diurnal["hard_gate_triggered"], f"got {r_diurnal}")
+
+    # 19. Severe storm precursor drop WITH companion squall gusts (>= 38 km/h / 10.56 m/s) -> Hard-gate breach
+    storm_drop_squall = {**calm, "delta_p_3h": -2.8, "wind_gust": 11.0, "rain_rate_mm_hr": 0.0}
+    r_storm_squall = apply_hard_gate(0, storm_drop_squall)
+    check("Storm precursor pressure drop (-2.8 hPa) with companion squall gusts (11.0 m/s) forces Critical Risk",
+          r_storm_squall["final_tier"] == 4 and r_storm_squall["hard_gate_triggered"] and "rapid barometric drop" in r_storm_squall["override_reasons"][0],
+          f"got {r_storm_squall}")
+
+    # 20. Severe storm precursor drop WITH companion heavy rain (>= 15 mm/hr) -> Hard-gate breach
+    storm_drop_rain = {**calm, "delta_p_3h": -2.8, "wind_gust": 5.0, "rain_rate_mm_hr": 16.0}
+    r_storm_rain = apply_hard_gate(0, storm_drop_rain)
+    check("Storm precursor pressure drop (-2.8 hPa) with companion heavy rain (16.0 mm/hr) forces Critical Risk",
+          r_storm_rain["final_tier"] == 4 and r_storm_rain["hard_gate_triggered"] and "rapid barometric drop" in r_storm_rain["override_reasons"][0],
+          f"got {r_storm_rain}")
+
     print(f"\n{total_checks[0] - len(failures)} / {total_checks[0]} tests passed")
     if failures:
         print("\nFAILURES:")
@@ -295,3 +332,4 @@ def _run_tests():
 
 if __name__ == "__main__":
     _run_tests()
+
