@@ -169,7 +169,7 @@ def evaluate_operational_safety(
         displayed_tier_name = "SUPPRESSED_PROVISIONAL_TREND"
         advisory_message = (
             f"Provisional planning outlook ({horizon_hours}h ahead). Discrete safety tier is SUPPRESSED "
-            "because models at this range historically miss ~45% of dangerous conditions (FNR: 40.9%–54.5%) "
+            "because models at this range historically miss ~45% of dangerous conditions (FNR: 40.9%-54.5%) "
             "due to early MSE variance smoothing. Displaying raw physics, P90 tail bounds, and hard-gate alerts "
             "for tentative planning; formal safety clearance is strictly evaluated at T-1h."
         )
@@ -180,7 +180,7 @@ def evaluate_operational_safety(
         displayed_tier_name = "SUPPRESSED_FOR_EXTENDED_HORIZON"
         advisory_message = (
             f"Extended macro outlook ({horizon_hours}h ahead). Discrete safety tier is SUPPRESSED "
-            "due to climatological mean-regression (Critical FNR: 82%–100%). Displaying physical trajectory, "
+            "due to climatological mean-regression (Critical FNR: 82%-100%). Displaying physical trajectory, "
             "P90 tail risk, and hard-gate alerts for advance trip scheduling; re-evaluate as conditions "
             "approach T-24h and T-1h."
         )
