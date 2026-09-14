@@ -19,7 +19,7 @@ MODELS_DIR = PROJECT_ROOT / "models"
 
 from src.validation.splits import temporal_split
 from src.features.horizon_targets import HORIZONS
-from src.labels.build_safety_labels import HARD_GATE, TIER_NAMES
+from src.labels.build_safety_labels import SAFETY_THRESHOLDS, TIER_NAMES
 from src.models.train_safety_classifier import (
     generate_classifier_dataset, predict_booster
 )
@@ -92,9 +92,9 @@ def main():
             print(f"  Ground Truth Tier: Critical Risk (4)")
             print(f"  ML Predicted Tier: {TIER_NAMES[pred_tier]} ({pred_tier})")
             print(f"  Predicted Physical Features:")
-            print(f"    - Mean Gust:       {row['pred_wind_gust']:>5.2f} m/s  | P90 Gust: {row['pred_wind_gust_p90']:>5.2f} m/s (Gate: >= {HARD_GATE['wind_gust_ms']:.2f})")
-            print(f"    - Mean Wind:       {row['pred_wind_speed']:>5.2f} m/s  | P90 Wind: {row['pred_wind_speed_p90']:>5.2f} m/s (Gate: >= {HARD_GATE['wind_speed_ms']:.2f})")
-            print(f"    - Mean Wave(hs):   {row['pred_hs']:>5.2f} m    | P90 Wave: {row['pred_hs_p90']:>5.2f} m   (Gate: >= {HARD_GATE['wave_height_m']:.2f})")
+            print(f"    - Mean Gust:       {row['pred_wind_gust']:>5.2f} m/s  | P90 Gust: {row['pred_wind_gust_p90']:>5.2f} m/s (Limit: >= {SAFETY_THRESHOLDS['wind_gust_ms']:.2f})")
+            print(f"    - Mean Wind:       {row['pred_wind_speed']:>5.2f} m/s  | P90 Wind: {row['pred_wind_speed_p90']:>5.2f} m/s (Limit: >= {SAFETY_THRESHOLDS['wind_speed_ms']:.2f})")
+            print(f"    - Mean Wave(hs):   {row['pred_hs']:>5.2f} m    | P90 Wave: {row['pred_hs_p90']:>5.2f} m   (Limit: >= {SAFETY_THRESHOLDS['wave_height_m']:.2f})")
 
     print("\n" + "=" * 75)
     print("Diagnostic complete.")

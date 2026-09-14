@@ -32,7 +32,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ONNX_DIR = PROJECT_ROOT / "models" / "onnx"
 
 from src.models.train_safety_classifier import WAVE_TARGETS
-from src.serve.hard_gate import apply_hard_gate, evaluate_operational_safety, TIER_NAMES
+from src.serve.safety_thresholds import apply_safety_thresholds, evaluate_operational_safety, TIER_NAMES
 from src.serve.currents_cache import get_live_currents_forecast
 
 WIND_REGRESSOR_TARGETS = ["wind_speed", "wind_gust", "delta_p_3h"]
@@ -40,7 +40,7 @@ WIND_REGRESSOR_TARGETS = ["wind_speed", "wind_gust", "delta_p_3h"]
 app = FastAPI(
     title="Camp FreedivePH Weather Safety & Booking Assessment Service",
     description="Microservice providing marine physics forecasting, 9-variable PHP score alignment, "
-                "deterministic hard-gate safety overrides, and operational horizon cutoff assessments "
+                "deterministic safety threshold overrides, and operational horizon cutoff assessments "
                 "for Laravel booking management.",
     version="2.0.0",
 )
@@ -164,7 +164,8 @@ class HourlyPrediction(BaseModel):
     predicted_current_dir: float
     ml_risk_tier: str
     final_risk_tier: str
-    hard_gate_triggered: bool
+    safety_threshold_triggered: bool = False
+    hard_gate_triggered: bool = False  # Backward-compatible alias
     override_reasons: List[str]
 
 
@@ -198,7 +199,8 @@ class HourlyAssessmentDetail(BaseModel):
     ml_raw_tier_name: str
     final_tier: int
     final_tier_name: str
-    hard_gate_triggered: bool
+    safety_threshold_triggered: bool = False
+    hard_gate_triggered: bool = False  # Backward-compatible alias
     override_reasons: List[str]
     advisory_message: str
     current_source: str
@@ -221,7 +223,8 @@ class WorstHourSummary(BaseModel):
     horizon_hours: int
     final_tier: int
     final_tier_name: str
-    hard_gate_triggered: bool
+    safety_threshold_triggered: bool = False
+    hard_gate_triggered: bool = False  # Backward-compatible alias
     override_reasons: List[str]
     primary_hazard: str
     advisory_message: str
@@ -239,7 +242,9 @@ class BookingAssessmentResponse(BaseModel):
     is_authoritative_go: bool
     displayed_risk_tier: Optional[int]
     displayed_risk_name: str
-    overall_hard_gate_triggered: bool
+    safety_threshold_triggered: bool = False
+    overall_safety_threshold_triggered: bool = False
+    overall_hard_gate_triggered: bool = False  # Backward-compatible alias
     worst_hour: WorstHourSummary
     hourly_assessments: List[HourlyAssessmentDetail]
     generated_at: str
@@ -376,7 +381,7 @@ def predict(request: ForecastRequest):
             "rain_rate_mm_hr": float(valid.loc[i, "rain_rate_mm_hr"]),
             "slp": float(valid.loc[i, "slp"]),
         }
-        gate_result = apply_hard_gate(int(ml_preds[i]), telemetry, pagasa_dict)
+        threshold_result = apply_safety_thresholds(int(ml_preds[i]), telemetry, pagasa_dict)
 
         results.append(HourlyPrediction(
             timestamp=str(valid.loc[i, "timestamp"]),
@@ -393,9 +398,10 @@ def predict(request: ForecastRequest):
             predicted_current_speed=float(preds["current_speed"][i]),
             predicted_current_dir=float(preds["current_dir"][i]),
             ml_risk_tier=TIER_NAMES[int(ml_preds[i])],
-            final_risk_tier=gate_result["final_tier_name"],
-            hard_gate_triggered=gate_result["hard_gate_triggered"],
-            override_reasons=gate_result["override_reasons"],
+            final_risk_tier=threshold_result["final_tier_name"],
+            safety_threshold_triggered=threshold_result["safety_threshold_triggered"],
+            hard_gate_triggered=threshold_result["hard_gate_triggered"],
+            override_reasons=threshold_result["override_reasons"],
         ))
 
     return ForecastResponse(predictions=results, skipped_leading_rows=0)
@@ -460,7 +466,7 @@ def assess_booking(request: BookingAssessmentRequest):
             "slp": float(valid.loc[i, "slp"]),
         }
 
-        # Apply deterministic hard-gate and operational cutoff policy
+        # Apply deterministic safety threshold and operational cutoff policy
         op_result = evaluate_operational_safety(horizon_hours, int(ml_preds[i]), telemetry, pagasa_dict)
 
         detail = HourlyAssessmentDetail(
@@ -475,6 +481,7 @@ def assess_booking(request: BookingAssessmentRequest):
             ml_raw_tier_name=TIER_NAMES[int(ml_preds[i])],
             final_tier=op_result["displayed_tier"] if op_result["displayed_tier"] is not None else int(op_result["ml_raw_prediction"]),
             final_tier_name=TIER_NAMES[int(op_result["ml_raw_prediction"])],
+            safety_threshold_triggered=op_result["safety_threshold_triggered"],
             hard_gate_triggered=op_result["hard_gate_triggered"],
             override_reasons=op_result["override_reasons"],
             advisory_message=op_result["advisory_message"],
@@ -501,13 +508,13 @@ def assess_booking(request: BookingAssessmentRequest):
     target_hours = session_hourly_details if len(session_hourly_details) > 0 else all_hourly_details
 
     # --- Identify the WORST HOUR in the session ---
-    # Sort key: 1. hard_gate_triggered (True first), 2. final_tier (highest first), 3. predicted_hs, 4. predicted_wind_speed
+    # Sort key: 1. safety_threshold_triggered (True first), 2. final_tier (highest first), 3. predicted_hs, 4. predicted_wind_speed
     worst = max(
         target_hours,
-        key=lambda h: (1 if h.hard_gate_triggered else 0, h.final_tier, h.predicted_hs, h.predicted_wind_speed)
+        key=lambda h: (1 if h.safety_threshold_triggered else 0, h.final_tier, h.predicted_hs, h.predicted_wind_speed)
     )
 
-    primary_hazard = worst.override_reasons[0] if worst.hard_gate_triggered else f"Peak Risk: {worst.final_tier_name}"
+    primary_hazard = worst.override_reasons[0] if worst.safety_threshold_triggered else f"Peak Risk: {worst.final_tier_name}"
 
     worst_summary = WorstHourSummary(
         timestamp=worst.timestamp,
@@ -515,6 +522,7 @@ def assess_booking(request: BookingAssessmentRequest):
         horizon_hours=worst.horizon_hours,
         final_tier=worst.final_tier,
         final_tier_name=worst.final_tier_name,
+        safety_threshold_triggered=worst.safety_threshold_triggered,
         hard_gate_triggered=worst.hard_gate_triggered,
         override_reasons=worst.override_reasons,
         primary_hazard=primary_hazard,
@@ -522,7 +530,7 @@ def assess_booking(request: BookingAssessmentRequest):
     )
 
     # --- Overall Session Verdict ---
-    any_hard_gate = any(h.hard_gate_triggered for h in target_hours)
+    any_threshold_breach = any(h.safety_threshold_triggered for h in target_hours)
     max_tier = max(h.final_tier for h in target_hours)
     min_horizon = min(h.horizon_hours for h in target_hours)
     max_horizon = max(h.horizon_hours for h in target_hours)
@@ -536,7 +544,7 @@ def assess_booking(request: BookingAssessmentRequest):
         overall_op_status = "EXTENDED_TREND_OUTLOOK"
 
     # Determine 5-tier recommendation directly matching platform safety classifications
-    if any_hard_gate or max_tier == 4:
+    if any_threshold_breach or max_tier == 4:
         overall_recommendation = "Critical Risk"
         operational_action = "NO_GO"
         is_authoritative_go = False
@@ -572,7 +580,9 @@ def assess_booking(request: BookingAssessmentRequest):
         is_authoritative_go=is_authoritative_go,
         displayed_risk_tier=displayed_risk_tier,
         displayed_risk_name=displayed_risk_name,
-        overall_hard_gate_triggered=any_hard_gate,
+        safety_threshold_triggered=any_threshold_breach,
+        overall_safety_threshold_triggered=any_threshold_breach,
+        overall_hard_gate_triggered=any_threshold_breach,
         worst_hour=worst_summary,
         hourly_assessments=target_hours,
         generated_at=now_utc.isoformat(),

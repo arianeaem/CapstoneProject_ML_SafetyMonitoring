@@ -1,6 +1,6 @@
 """
 Safety label generation, ALIGNED EXACTLY to PHP's WeatherForecastService.php —
-weights, sub-scoring bands, and hard-gate thresholds all matched to the live
+weights, sub-scoring bands, and physical safety thresholds all matched to the live
 PHP implementation, not independently re-derived. This is what makes the two
 parallel paths (native PHP scorer using live Open-Meteo directly, and this
 ML path using our own forecaster models) comparable in the way the panel
@@ -8,19 +8,19 @@ presentation needs them to be.
 
 KEY METEOROLOGICAL & SYSTEM DESIGN ALIGNMENTS:
 
-1. Wind hard-gate threshold: Standardized on 38.0 km/h sustained (10.56 m/s)
+1. Wind safety threshold: Standardized on 38.0 km/h sustained (10.56 m/s)
    and 48.0 km/h gusts (13.33 m/s), matching updateAllForecasts() and
-   this project's hard_gate.py.
+   this project's safety_thresholds.py.
 
-2. 3-Hour Pressure Drop Omission: The 3-hour pressure drop gate (>= 2.0 hPa)
-   is deliberately EXCLUDED from the window-level hard gate, matching PHP's
+2. 3-Hour Pressure Drop Omission: The 3-hour pressure drop limit (>= 2.0 hPa)
+   is deliberately EXCLUDED from the window-level safety thresholds, matching PHP's
    operative evaluateWindowNatively(). In tropical maritime environments like
    the Philippines, the semi-diurnal atmospheric solar tide (S2 oscillation)
    routinely causes natural 2.0+ hPa barometric pressure swings over 3-4 hour
    windows twice daily (10:00->16:00 and 22:00->04:00) during calm, clear weather.
-   Enforcing a 3-hour pressure drop hard-gate at hourly resolution acts as a
+   Enforcing a 3-hour pressure drop threshold at hourly resolution acts as a
    massive false-positive generator. Extreme low pressure is correctly guarded
-   by the absolute slp <= 998.0 hPa hard-gate and slp sub-scoring.
+   by the absolute slp <= 998.0 hPa threshold and slp sub-scoring.
 
 Run from the project root: python src/labels/build_safety_labels.py
 """
@@ -40,11 +40,11 @@ KMH_TO_MS = 1000 / 3600
 TIER_NAMES = ["Very Safe", "Safe", "Moderate", "High Risk", "Critical Risk"]
 
 # ---------------------------------------------------------------------------
-# Hard-gate thresholds — matched to PHP's operational window-level gate
+# Critical Safety Thresholds — matched to PHP's operational window-level limits
 # (evaluateWindowNatively), converted to this project's standard SI units
 # (m/s, meters, hPa, mm/hr).
 # ---------------------------------------------------------------------------
-HARD_GATE = {
+SAFETY_THRESHOLDS = {
     "wind_speed_ms": 38.0 * KMH_TO_MS,  # 38 km/h sustained
     "wind_gust_ms": 48.0 * KMH_TO_MS,   # 48 km/h gusts
     "wave_height_m": 1.80,              # 1.80 m significant wave height
@@ -54,31 +54,40 @@ HARD_GATE = {
     "pressure_hpa": 998.0,              # <= 998.0 hPa cyclone / severe low
 }
 
+# Backward-compatibility alias
+HARD_GATE = SAFETY_THRESHOLDS
 
-def check_hard_gate(df: pd.DataFrame) -> pd.Series:
-    """Evaluates the 7 operational physical hard-gates."""
+
+def check_safety_thresholds(df: pd.DataFrame) -> pd.Series:
+    """Evaluates the 7 operational physical safety thresholds."""
     breach = pd.Series(False, index=df.index)
-    breach |= df["wind_speed"] >= HARD_GATE["wind_speed_ms"]
-    breach |= df["wind_gust"] >= HARD_GATE["wind_gust_ms"]
-    breach |= df["hs"] >= HARD_GATE["wave_height_m"]
-    breach |= df["swell_height"] >= HARD_GATE["swell_height_m"]
-    breach |= df["current_speed"] >= HARD_GATE["current_ms"]
-    breach |= df["rain_rate_mm_hr"] >= HARD_GATE["rain_mm_hr"]
-    breach |= df["slp"] <= HARD_GATE["pressure_hpa"]
+    breach |= df["wind_speed"] >= SAFETY_THRESHOLDS["wind_speed_ms"]
+    breach |= df["wind_gust"] >= SAFETY_THRESHOLDS["wind_gust_ms"]
+    breach |= df["hs"] >= SAFETY_THRESHOLDS["wave_height_m"]
+    breach |= df["swell_height"] >= SAFETY_THRESHOLDS["swell_height_m"]
+    breach |= df["current_speed"] >= SAFETY_THRESHOLDS["current_ms"]
+    breach |= df["rain_rate_mm_hr"] >= SAFETY_THRESHOLDS["rain_mm_hr"]
+    breach |= df["slp"] <= SAFETY_THRESHOLDS["pressure_hpa"]
     return breach
 
 
-def individual_hard_gate_breaches(df: pd.DataFrame) -> dict[str, int]:
+check_hard_gate = check_safety_thresholds
+
+
+def individual_safety_threshold_breaches(df: pd.DataFrame) -> dict[str, int]:
     """Diagnostic helper reporting counts per individual physical threshold."""
     return {
-        "wind_speed (>= 38 km/h)": int((df["wind_speed"] >= HARD_GATE["wind_speed_ms"]).sum()),
-        "wind_gust (>= 48 km/h)": int((df["wind_gust"] >= HARD_GATE["wind_gust_ms"]).sum()),
-        "wave_height (>= 1.8 m)": int((df["hs"] >= HARD_GATE["wave_height_m"]).sum()),
-        "swell_height (>= 1.8 m)": int((df["swell_height"] >= HARD_GATE["swell_height_m"]).sum()),
-        "current_speed (>= 0.8 m/s)": int((df["current_speed"] >= HARD_GATE["current_ms"]).sum()),
-        "rain_rate (>= 25 mm/hr)": int((df["rain_rate_mm_hr"] >= HARD_GATE["rain_mm_hr"]).sum()),
-        "pressure (<= 998 hPa)": int((df["slp"] <= HARD_GATE["pressure_hpa"]).sum()),
+        "wind_speed (>= 38 km/h)": int((df["wind_speed"] >= SAFETY_THRESHOLDS["wind_speed_ms"]).sum()),
+        "wind_gust (>= 48 km/h)": int((df["wind_gust"] >= SAFETY_THRESHOLDS["wind_gust_ms"]).sum()),
+        "wave_height (>= 1.8 m)": int((df["hs"] >= SAFETY_THRESHOLDS["wave_height_m"]).sum()),
+        "swell_height (>= 1.8 m)": int((df["swell_height"] >= SAFETY_THRESHOLDS["swell_height_m"]).sum()),
+        "current_speed (>= 0.8 m/s)": int((df["current_speed"] >= SAFETY_THRESHOLDS["current_ms"]).sum()),
+        "rain_rate (>= 25 mm/hr)": int((df["rain_rate_mm_hr"] >= SAFETY_THRESHOLDS["rain_mm_hr"]).sum()),
+        "pressure (<= 998 hPa)": int((df["slp"] <= SAFETY_THRESHOLDS["pressure_hpa"]).sum()),
     }
+
+
+individual_hard_gate_breaches = individual_safety_threshold_breaches
 
 
 # ---------------------------------------------------------------------------
@@ -209,24 +218,25 @@ def main():
     for feat, w in WEIGHTS.items():
         print(f"  {feat:20s} {w:.3f} ({w*100:.1f}%)")
 
-    print("\n--- Diagnostic: Individual Physical Hard-Gate Breach Counts ---")
-    breach_counts = individual_hard_gate_breaches(df)
+    print("\n--- Diagnostic: Individual Physical Safety Threshold Breach Counts ---")
+    breach_counts = individual_safety_threshold_breaches(df)
     for name, count in breach_counts.items():
         print(f"  {name:30s}: {count:5d} rows ({count/len(df)*100:.2f}%)")
 
-    hard_gate_breach = check_hard_gate(df)
+    safety_threshold_breach = check_safety_thresholds(df)
     subscores = compute_subscores(df)
     scores = compute_final_scores(subscores)
 
     tier = score_to_tier(scores["final_score_pct"])
-    tier = tier.where(~hard_gate_breach, 4)
+    tier = tier.where(~safety_threshold_breach, 4)
 
     labels = pd.DataFrame({
         "risk_tier": tier,
         "risk_tier_name": tier.map(dict(enumerate(TIER_NAMES))),
         "final_score_pct": scores["final_score_pct"],
         "hazard_count": scores["hazard_count"],
-        "hard_gate_triggered": hard_gate_breach,
+        "safety_threshold_triggered": safety_threshold_breach,
+        "hard_gate_triggered": safety_threshold_breach,  # Backward compatibility
     }, index=df.index)
 
     print("\nLabel distribution:")
@@ -235,8 +245,8 @@ def main():
         pct = count / len(labels) * 100
         print(f"  {name:14s} {count:6d} rows ({pct:5.1f}%)")
 
-    hard_gate_count = int(hard_gate_breach.sum())
-    print(f"\nTotal physical hard-gate breaches (auto-Critical): {hard_gate_count} rows ({hard_gate_count/len(df)*100:.2f}%)")
+    threshold_count = int(safety_threshold_breach.sum())
+    print(f"\nTotal physical safety threshold breaches (auto-Critical): {threshold_count} rows ({threshold_count/len(df)*100:.2f}%)")
 
     labels.to_parquet(OUT_PATH)
     print(f"\nWrote {len(labels)} rows -> {OUT_PATH}")

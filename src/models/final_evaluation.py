@@ -1,11 +1,11 @@
 """
 Final, one-time evaluation of the complete multi-horizon forecasting pipeline
-(wave/wind/current forecasters -> safety classifier -> hard-gate) on `test` —
+(wave/wind/current forecasters -> safety classifier -> deterministic safety thresholds) on `test` —
 the 15% chronological split that has been deliberately untouched through every
 step of this build.
 
 Evaluates multi-horizon performance across all 8 horizons (1h, 6h, 12h, 24h, 48h, 72h, 96h, 144h),
-both for the ML classifier alone and with the deterministic hard-gate layer applied.
+both for the ML classifier alone and with the deterministic safety thresholds layer applied.
 
 Run from the project root: python src/models/final_evaluation.py
 """
@@ -29,7 +29,7 @@ from src.models.train_safety_classifier import (
     generate_classifier_dataset, asymmetric_cost_score, predict_booster,
     TIER_NAMES, COST_MATRIX,
 )
-from src.serve.hard_gate import apply_hard_gate
+from src.serve.safety_thresholds import apply_safety_thresholds
 
 
 def load_classifier() -> xgb.Booster:
@@ -67,10 +67,10 @@ def main():
     classifier = load_classifier()
     ml_preds = predict_booster(classifier, test_X)
 
-    # Step 2: Hard-gate layer applied on top of predicted telemetry
-    print("Applying deterministic hard-gate layer on test predictions...")
+    # Step 2: Safety thresholds layer applied on top of predicted telemetry
+    print("Applying deterministic physical safety thresholds on test predictions...")
     final_tiers: list[int] = []
-    gate_triggered_count = 0
+    threshold_triggered_count = 0
 
     for i in range(len(test)):
         row = test_X.iloc[i]
@@ -83,17 +83,17 @@ def main():
             "rain_rate_mm_hr": float(row["rain_rate_mm_hr_lag0h"]),
             "slp": float(row["pred_slp"]),
         }
-        result = apply_hard_gate(int(ml_preds[i]), telemetry, pagasa=None)
+        result = apply_safety_thresholds(int(ml_preds[i]), telemetry, pagasa=None)
         final_tiers.append(int(result["final_tier"]))
-        if result["hard_gate_triggered"]:
-            gate_triggered_count += 1
+        if result["safety_threshold_triggered"]:
+            threshold_triggered_count += 1
 
-    print(f"Hard-gate triggered on {gate_triggered_count} / {len(test)} test rows "
-          f"({gate_triggered_count/len(test)*100:.2f}%)\n")
+    print(f"Safety thresholds triggered on {threshold_triggered_count} / {len(test)} test rows "
+          f"({threshold_triggered_count/len(test)*100:.2f}%)\n")
 
-    # --- Report both stages: ML alone, and ML + hard-gate combined ---
+    # --- Report both stages: ML alone, and ML + safety thresholds combined ---
     for stage_name, preds in [("ML Classifier Alone", ml_preds),
-                               ("Full System (ML + Hard-Gate)", final_tiers)]:
+                               ("Full System (ML + Safety Thresholds)", final_tiers)]:
         print("=" * 70)
         print(f"STAGE: {stage_name}")
         print("=" * 70)

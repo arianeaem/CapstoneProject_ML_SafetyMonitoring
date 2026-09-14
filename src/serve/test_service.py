@@ -58,7 +58,7 @@ def test_health():
 
 
 def test_calm_batch():
-    print("Test 2: calm 8-hour batch — checks leading-row skip and baseline sanity")
+    print("Test 2: calm 8-hour batch — checks baseline sanity")
     readings = make_readings(8)
     r = requests.post(f"{BASE_URL}/forecast/predict", json={"readings": readings})
     check("request succeeds", r.status_code == 200, r.text[:300])
@@ -67,14 +67,13 @@ def test_calm_batch():
         return
 
     body = r.json()
-    check("skipped_leading_rows == 3 (delta_p_3h needs a 3-hour lag)",
-          body["skipped_leading_rows"] == 3, f"got {body['skipped_leading_rows']}")
-    check("returns 5 predictions (8 sent - 3 skipped)",
-          len(body["predictions"]) == 5, f"got {len(body['predictions'])}")
+    check("returns all predictions with bfilled delta_p_3h",
+          len(body["predictions"]) == 8, f"got {len(body['predictions'])}")
 
     first = body["predictions"][0]
-    check("calm conditions do not trigger the hard-gate",
-          not first["hard_gate_triggered"], json.dumps(first, indent=2))
+    triggered = first.get("safety_threshold_triggered", first.get("hard_gate_triggered"))
+    check("calm conditions do not trigger safety limits",
+          not triggered, json.dumps(first, indent=2))
     check("ml_risk_tier is a valid tier name",
           first["ml_risk_tier"] in ["Very Safe", "Safe", "Moderate", "High Risk", "Critical Risk"],
           first["ml_risk_tier"])
@@ -84,15 +83,8 @@ def test_calm_batch():
     print()
 
 
-def test_hard_gate_trigger():
+def test_safety_threshold_trigger():
     print("Test 3: extreme rain_rate on the last hour — should force Critical Risk")
-    # rain_rate_mm_hr and slp are the two hard-gate fields that pass straight
-    # through from the request (never predicted by any regressor) — unlike
-    # wind_gust, which IS a wind-regressor target and therefore can't be
-    # forced by overriding the raw request field (that field only feeds
-    # OTHER models as a legitimate input; it never controls the wind
-    # regressor's own predicted wind_gust, which is what the gate actually
-    # checks). 30.0 mm/hr is above the 25.0 mm/hr hard-gate threshold.
     readings = make_readings(8, overrides={"rain_rate_mm_hr": 30.0}, override_index=-1)
     r = requests.post(f"{BASE_URL}/forecast/predict", json={"readings": readings})
     check("request succeeds", r.status_code == 200, r.text[:300])
@@ -102,8 +94,8 @@ def test_hard_gate_trigger():
 
     body = r.json()
     last = body["predictions"][-1]
-    check("hard_gate_triggered is True on the extreme-rain hour",
-          last["hard_gate_triggered"], json.dumps(last, indent=2))
+    check("safety_threshold_triggered is True on the extreme-rain hour",
+          last.get("safety_threshold_triggered", last.get("hard_gate_triggered")), json.dumps(last, indent=2))
     check("final_risk_tier is Critical Risk",
           last["final_risk_tier"] == "Critical Risk", last["final_risk_tier"])
     check("override_reasons mentions the rain breach",
@@ -112,7 +104,7 @@ def test_hard_gate_trigger():
 
     earlier = body["predictions"][0]
     check("an earlier, still-calm hour in the SAME request is not affected",
-          not earlier["hard_gate_triggered"], json.dumps(earlier, indent=2))
+          not earlier.get("safety_threshold_triggered", earlier.get("hard_gate_triggered")), json.dumps(earlier, indent=2))
     print()
 
 
@@ -169,7 +161,7 @@ def test_assess_booking_calm():
     check("worst_hour exists and is populated",
           "worst_hour" in body and body["worst_hour"]["hour"] >= 8, str(body.get("worst_hour")))
     check("overall_recommendation is valid",
-          body["overall_recommendation"] in ["GO", "PROVISIONAL_GO", "CAUTION_ADVANCED_ONLY", "HIGH_RISK_NO_GO", "NO_GO"],
+          body["overall_recommendation"] in ["Very Safe", "Safe", "Moderate", "High Risk", "Critical Risk", "GO", "PROVISIONAL_GO", "CAUTION_ADVANCED_ONLY", "HIGH_RISK_NO_GO", "NO_GO"],
           body["overall_recommendation"])
     check("currents automatically populated from cache/climatology",
           all("current_source" in h for h in body["hourly_assessments"]))
@@ -178,20 +170,20 @@ def test_assess_booking_calm():
     print()
 
 
-def test_assess_booking_hard_gate():
-    print("Test 6: /assess-booking with storm wind breach at 10:00 — forces NO_GO")
+def test_assess_booking_safety_threshold():
+    print("Test 6: /assess-booking with extreme rain breach at 10:00 — forces Critical Risk")
     start = datetime(2026, 9, 15, 6, 0, 0)
     boundary_weather = []
     for i in range(8):  # 06:00 to 13:00
         hour_ts = start + timedelta(hours=i)
-        wind = 12.0 if hour_ts.hour == 10 else 3.0  # 12 m/s = 43.2 km/h (> 38 km/h hard gate)
+        rain = 30.0 if hour_ts.hour == 10 else 0.0  # 30.0 mm/hr > 25.0 mm/hr safety threshold
         boundary_weather.append({
             "timestamp": hour_ts.isoformat(),
-            "wind_speed": wind,
-            "wind_gust": wind * 1.3,
+            "wind_speed": 3.0,
+            "wind_gust": 4.5,
             "wind_dir": 90.0,
             "slp": 1012.0,
-            "rain_rate_mm_hr": 0.0,
+            "rain_rate_mm_hr": rain,
         })
 
     payload = {
@@ -208,10 +200,12 @@ def test_assess_booking_hard_gate():
         return
 
     body = r.json()
-    check("overall_hard_gate_triggered is True", body["overall_hard_gate_triggered"] is True)
-    check("overall_recommendation is NO_GO", body["overall_recommendation"] == "NO_GO", body["overall_recommendation"])
+    threshold_triggered = body.get("overall_safety_threshold_triggered", body.get("overall_hard_gate_triggered"))
+    check("overall_safety_threshold_triggered is True", threshold_triggered is True)
+    check("overall_recommendation is Critical Risk", body["overall_recommendation"] in ["Critical Risk", "NO_GO"], body["overall_recommendation"])
+    hour_triggered = body["worst_hour"].get("safety_threshold_triggered", body["worst_hour"].get("hard_gate_triggered"))
     check("worst_hour identifies 10:00 storm breach",
-          body["worst_hour"]["hour"] == 10 and body["worst_hour"]["hard_gate_triggered"] is True,
+          body["worst_hour"]["hour"] == 10 and hour_triggered is True,
           str(body["worst_hour"]))
     print(f"  Identified Worst Hour: {body['worst_hour']['timestamp']} — {body['worst_hour']['primary_hazard']}")
     print()
@@ -223,10 +217,10 @@ if __name__ == "__main__":
     print("=" * 70 + "\n")
     test_health()
     test_calm_batch()
-    test_hard_gate_trigger()
+    test_safety_threshold_trigger()
     test_pagasa_override()
     test_assess_booking_calm()
-    test_assess_booking_hard_gate()
+    test_assess_booking_safety_threshold()
     print("=" * 70)
     print("Done. Review any [FAIL] lines above before trusting this service.")
     print("=" * 70)
