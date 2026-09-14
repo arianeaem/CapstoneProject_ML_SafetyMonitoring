@@ -281,6 +281,13 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 
 @app.get("/health")
 def health():
+    """
+    Service health check and model registry status.
+
+    Returns:
+        dict: Service metadata, status ('ok'), count of loaded ONNX sessions,
+              and list of active model names.
+    """
     return {
         "status": "ok",
         "service": "Camp FreedivePH Weather Safety Assessment Service",
@@ -290,7 +297,117 @@ def health():
 
 
 def _run_inference_pipeline(raw_df: pd.DataFrame, pagasa_dict: Optional[dict]):
-    """Internal core inference execution shared across endpoints."""
+    """
+    Core internal inference execution engine.
+
+    Pipeline Architecture:
+        1. Current Vector Enrichment: If ocean currents are missing from boundary payload,
+           retrieves Copernicus CMEMS hourly vectors (or climatological fallback).
+        2. Feature Engineering: Matches exact sine/cosine temporal and barometric delta
+           transforms constructed during model training.
+        3. Multi-Model Regressors: Runs wave, wind, and current ONNX regressors.
+        4. Physics Feature Derivation: Computes non-linear wave steepness and swell ratios.
+        5. 5-Tier Safety Classifier: Evaluates predicted oceanographic state into risk probabilities.
+
+    Parameters:
+        raw_df (pd.DataFrame): Input hourly atmospheric readings.
+        pagasa_dict (dict | None): Optional active PAGASA warnings.
+
+    Returns:
+        tuple[pd.DataFrame, dict, np.ndarray]:
+            - valid (pd.DataFrame): Fully engineered feature table.
+            - preds (dict): Regressor predictions for hs, tp, wind_speed, current_speed, etc.
+            - ml_preds (np.ndarray): Argmax class predictions (0-4) from safety classifier.
+    """
+
+
+# TODO: Implement Redis-backed inference response caching for high-concurrency booking traffic during typhoons.
+
+
+@app.post("/forecast/predict", response_model=ForecastResponse)
+def predict(request: ForecastRequest):
+    """
+    Raw multi-horizon physics forecasting and safety classification endpoint.
+
+    Parameters:
+        request (ForecastRequest): Hourly atmospheric readings and optional PAGASA advisories.
+
+    Returns:
+        ForecastResponse: Hourly predictions including predicted wave height, period, swell,
+                          wind components, current speed/direction, and deterministic safety thresholds.
+    """
+    if len(SESSIONS) == 0:
+        raise HTTPException(status_code=503, detail="Models not loaded yet")
+
+    raw = pd.DataFrame([r.model_dump() for r in request.readings])
+    pagasa_dict = request.pagasa.model_dump() if request.pagasa else None
+
+    valid, preds, ml_preds = _run_inference_pipeline(raw, pagasa_dict)
+
+    results = []
+    for i in range(len(valid)):
+        telemetry = {
+            "wind_speed": float(preds["wind_speed"][i]),
+            "wind_gust": float(preds["wind_gust"][i]),
+            "hs": float(preds["hs"][i]),
+            "swell_height": float(preds["swell_height"][i]),
+            "current_speed": float(preds["current_speed"][i]),
+            "rain_rate_mm_hr": float(valid.loc[i, "rain_rate_mm_hr"]),
+            "slp": float(valid.loc[i, "slp"]),
+        }
+        threshold_result = apply_safety_thresholds(int(ml_preds[i]), telemetry, pagasa_dict)
+
+        results.append(HourlyPrediction(
+            timestamp=str(valid.loc[i, "timestamp"]),
+            predicted_hs=float(preds["hs"][i]),
+            predicted_tp=float(preds["tp"][i]),
+            predicted_swell_height=float(preds["swell_height"][i]),
+            predicted_wind_wave_height=float(preds["wind_wave_height"][i]),
+            predicted_wind_speed=float(preds["wind_speed"][i]),
+            predicted_wind_gust=float(preds["wind_gust"][i]),
+            predicted_wind_dir=float(preds["wind_dir"][i]),
+            predicted_delta_p_3h=float(valid.loc[i, "delta_p_3h"]),
+            predicted_current_u=float(preds["current_u"][i]),
+            predicted_current_v=float(preds["current_v"][i]),
+            predicted_current_speed=float(preds["current_speed"][i]),
+            predicted_current_dir=float(preds["current_dir"][i]),
+            ml_risk_tier=TIER_NAMES[int(ml_preds[i])],
+            final_risk_tier=threshold_result["final_tier_name"],
+            safety_threshold_triggered=threshold_result["safety_threshold_triggered"],
+            hard_gate_triggered=threshold_result["hard_gate_triggered"],
+            override_reasons=threshold_result["override_reasons"],
+        ))
+
+    return ForecastResponse(predictions=results, skipped_leading_rows=0)
+
+
+# ===========================================================================
+# /assess-booking: The Core Laravel Integration Endpoint
+# ===========================================================================
+@app.post("/assess-booking", response_model=BookingAssessmentResponse)
+def assess_booking(request: BookingAssessmentRequest):
+    """
+    Evaluates a planned freediving booking session for the Laravel backend.
+
+    Business Logic & Decision Pipeline:
+        1. Contextual Boundary Ingestion: Receives Open-Meteo atmospheric readings for the planned date.
+        2. CMEMS Current Injection: Pulls Copernicus ocean current vectors to model drift risk.
+        3. Multi-Model Physics Forecast: Produces 12 ONNX model predictions (wave, wind, currents).
+        4. Operational Cutoff Policy:
+           - T-1h (Tactical): Unlocks authoritative GO / NO_GO clearance.
+           - T-6h to T-24h (Provisional): Suppresses discrete classification to prevent false reassurance
+             from MSE variance smoothing; returns raw physics and P90 tail risk bounds.
+           - T-48h+ (Extended): Evaluates broad climatological trend for scheduling.
+        5. Session Worst-Hour Reduction: Identifies the single most hazardous hour during the dive window
+           (e.g., peak wind gust or tidal current surge) to dictate the overall safety recommendation.
+
+    Parameters:
+        request (BookingAssessmentRequest): Session date, start time, end time, and boundary telemetry.
+
+    Returns:
+        BookingAssessmentResponse: Comprehensive verdict including operational status,
+                                   overall 5-tier recommendation, worst hour summary, and hourly details.
+    """
     # Check if ocean currents are missing or unpopulated; if so, inject from CMEMS cache/climatology
     needs_currents = (
         "current_u" not in raw_df.columns

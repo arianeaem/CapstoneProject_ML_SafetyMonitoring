@@ -59,7 +59,21 @@ HARD_GATE = SAFETY_THRESHOLDS
 
 
 def check_safety_thresholds(df: pd.DataFrame) -> pd.Series:
-    """Evaluates the 7 operational physical safety thresholds."""
+    """
+    Evaluates raw physical marine readings against mandatory physical safety limits.
+
+    Business Logic / Rationale:
+        Physical threshold enforcement guarantees that regardless of ML classifier
+        confidence, any severe single-variable oceanographic hazard (e.g., gale-force
+        gusts >= 48 km/h or sea state >= 1.8m) instantly triggers a Critical Risk verdict.
+        This provides a deterministic safety floor preventing false negatives.
+
+    Parameters:
+        df (pd.DataFrame): Time-indexed atmospheric and oceanographic readings.
+
+    Returns:
+        pd.Series (bool): Boolean mask where True indicates at least one physical limit is breached.
+    """
     breach = pd.Series(False, index=df.index)
     breach |= df["wind_speed"] >= SAFETY_THRESHOLDS["wind_speed_ms"]
     breach |= df["wind_gust"] >= SAFETY_THRESHOLDS["wind_gust_ms"]
@@ -75,7 +89,15 @@ check_hard_gate = check_safety_thresholds
 
 
 def individual_safety_threshold_breaches(df: pd.DataFrame) -> dict[str, int]:
-    """Diagnostic helper reporting counts per individual physical threshold."""
+    """
+    Diagnostic helper reporting breach frequency for each physical threshold.
+
+    Parameters:
+        df (pd.DataFrame): Input dataset containing raw physical variables.
+
+    Returns:
+        dict[str, int]: Mapping of parameter threshold labels to total breach counts.
+    """
     return {
         "wind_speed (>= 38 km/h)": int((df["wind_speed"] >= SAFETY_THRESHOLDS["wind_speed_ms"]).sum()),
         "wind_gust (>= 48 km/h)": int((df["wind_gust"] >= SAFETY_THRESHOLDS["wind_gust_ms"]).sum()),
@@ -95,30 +117,64 @@ individual_hard_gate_breaches = individual_safety_threshold_breaches
 # score*() functions — including PHP's own choice of strict vs inclusive
 # comparison operators, which vary per function in the source.
 # ---------------------------------------------------------------------------
-def score_wave_height(v: pd.Series) -> pd.Series:  # also used for swell_height (PHP delegates)
+def score_wave_height(v: pd.Series) -> pd.Series:
+    """
+    Scores significant wave height (Hs) into 5 risk severity tiers.
+    
+    Rationale:
+        Freediving open-water training lines become dangerous above 0.80m due to
+        surface chop disrupting breathing relaxation and diver visibility.
+    """
     return pd.cut(v, bins=[-np.inf, 0.30, 0.50, 0.80, 1.00, np.inf],
                    labels=[0, 1, 2, 3, 4], right=False).astype(int)
 
 
 def score_wind_wave_height(v: pd.Series) -> pd.Series:
+    """
+    Scores wind-driven sea chop (wind wave height) into 5 risk severity tiers.
+    
+    Rationale:
+        Short-period wind chop causes abrupt boat pitching and diver disorientation
+        near buoy platforms even when long-period swell is minimal.
+    """
     return pd.cut(v, bins=[-np.inf, 0.20, 0.40, 0.60, 0.80, np.inf],
                    labels=[0, 1, 2, 3, 4], right=False).astype(int)
 
 
 def score_wave_period(v: pd.Series) -> pd.Series:
+    """
+    Scores dominant wave period (Tp) into 5 risk severity tiers (inverted scale).
+    
+    Rationale:
+        Long wave periods (>7s) indicate organized, predictable swell energy. Short
+        periods (<=3s) represent chaotic, steep wind chop that increases aspiration risk.
+    """
     # PHP: v>7.0->0, v>5.0->1, v>3.0->2, v>2.0->3, else 4 (strict '>' throughout)
     return pd.cut(v, bins=[-np.inf, 2.0, 3.0, 5.0, 7.0, np.inf],
                    labels=[4, 3, 2, 1, 0], right=True).astype(int)
 
 
 def score_ocean_current(v: pd.Series) -> pd.Series:
+    """
+    Scores ocean current speed into 5 risk severity tiers.
+    
+    Rationale:
+        Currents above 0.50 m/s (~1 knot) cause freediving shot lines to drift at an
+        angle, increasing ascent fatigue and risking diver separation from safety divers.
+    """
     return pd.cut(v, bins=[-np.inf, 0.10, 0.30, 0.50, 0.80, np.inf],
                    labels=[0, 1, 2, 3, 4], right=False).astype(int)
 
 
 def score_wind_speed(sustained_ms: pd.Series, gust_ms: pd.Series) -> pd.Series:
-    """PHP uses a JOINT condition (both sustained AND gust must be under the
-    tier's bound), not independent scoring of each then taking the max."""
+    """
+    Jointly scores sustained wind speed and wind gusts.
+
+    Rationale:
+        Wind hazard in Anilao coastal waters is a compound effect of continuous wind
+        driving currents and sudden gusts capsizing small banca boats. Both sustained
+        and gust speeds must remain within a tier's bound to qualify for lower risk.
+    """
     sustained_kmh = sustained_ms / KMH_TO_MS
     gust_kmh = gust_ms / KMH_TO_MS
     score = pd.Series(4, index=sustained_ms.index)
@@ -130,19 +186,41 @@ def score_wind_speed(sustained_ms: pd.Series, gust_ms: pd.Series) -> pd.Series:
 
 
 def score_rain(v: pd.Series) -> pd.Series:
+    """
+    Scores precipitation rate into 5 risk severity tiers.
+    
+    Rationale:
+        Heavy rainfall (>7.5 mm/hr) drastically impairs spotter surface visibility,
+        while extreme rain (>20 mm/hr) indicates convective thunderstorm squalls.
+    """
     return pd.cut(v, bins=[-np.inf, 0.2, 2.5, 7.5, 20.0, np.inf],
                    labels=[0, 1, 2, 3, 4], right=False).astype(int)
 
 
 def score_sea_level_pressure(v: pd.Series) -> pd.Series:
+    """
+    Scores mean sea level pressure (SLP) into 5 risk severity tiers.
+    
+    Rationale:
+        Standard tropical atmospheric pressure is ~1012 hPa. Barometric depression
+        below 1004 hPa signals monsoon troughs or approaching tropical cyclones.
+    """
     return pd.cut(v, bins=[-np.inf, 1000.0, 1004.0, 1008.0, 1012.0, np.inf],
                    labels=[4, 3, 2, 1, 0], right=False).astype(int)
 
 
 def score_wind_direction(deg: pd.Series) -> pd.Series:
-    """PHP sequential if-elseif chain (first match wins)."""
+    """
+    Scores wind direction relative to Balayan Bay / Anilao coastal topography.
+
+    Rationale:
+        - 0°-90° & 315°-360° (NNE/NW): Sheltered by Batangas mainland / Mt. Gulugod Baboy (Score 0).
+        - 90°-135° (ENE/ESE): Moderate offshore sheltering (Score 1).
+        - 135°-180° & 270°-315° (SE/W): Exposed open-water fetch (Score 2).
+        - 180°-270° (SSW/SW Habagat): Direct, uninhibited South China Sea fetch creating dangerous chop (Score 3).
+    """
     d = deg % 360
-    score = pd.Series(-1, index=deg.index)  # -1 = not yet assigned
+    score = pd.Series(-1, index=deg.index)  # -1 = unassigned sentinel
 
     cond1 = ((d >= 0) & (d <= 90)) | (d > 315)
     score = score.where(~(cond1 & (score == -1)), 0)
@@ -153,11 +231,20 @@ def score_wind_direction(deg: pd.Series) -> pd.Series:
     cond3 = (d <= 180) | (d > 270)
     score = score.where(~(cond3 & (score == -1)), 2)
 
-    score = score.where(score != -1, 3)  # else branch
+    score = score.where(score != -1, 3)  # Southwest Habagat exposure
     return score.astype(int)
 
 
 def compute_subscores(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Transforms continuous physical telemetry into normalized discrete sub-scores (0-4).
+
+    Parameters:
+        df (pd.DataFrame): Preprocessed weather and marine dataset.
+
+    Returns:
+        pd.DataFrame: 9-column dataframe containing sub-scores for all safety parameters.
+    """
     sub = pd.DataFrame(index=df.index)
     sub["wave_height"] = score_wave_height(df["hs"])
     sub["wind_speed"] = score_wind_speed(df["wind_speed"], df["wind_gust"])
@@ -192,6 +279,20 @@ SYNERGY_HAZARD_FEATURES = ["wave_height", "wind_speed", "ocean_current", "wind_d
 
 
 def compute_final_scores(sub: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculates weighted composite safety scores and applies non-linear synergy penalties.
+
+    Rationale:
+        Multiple concurrent moderate hazards (e.g. moderate wind + adverse current + opposing swell)
+        compound diver fatigue exponentially compared to isolated hazards. The synergy multiplier
+        escalates score by +15% for 3 concurrent hazards and +25% for 4+ concurrent hazards.
+
+    Parameters:
+        sub (pd.DataFrame): 9-variable discrete sub-scores.
+
+    Returns:
+        pd.DataFrame: Contains base_score_pct, hazard_count, synergy_multiplier, and final_score_pct.
+    """
     base_score = sum(sub[feat] * WEIGHTS[feat] for feat in WEIGHTS) / 4.0 * 100
 
     hazard_count = (sub[SYNERGY_HAZARD_FEATURES] >= 2).sum(axis=1)
@@ -200,14 +301,30 @@ def compute_final_scores(sub: pd.DataFrame) -> pd.DataFrame:
     synergy = synergy.where(hazard_count < 4, 1.25)
 
     final_score = (base_score * synergy).clip(upper=100.0)
-    return pd.DataFrame({"base_score_pct": base_score, "hazard_count": hazard_count,
-                          "synergy_multiplier": synergy, "final_score_pct": final_score})
+    return pd.DataFrame({
+        "base_score_pct": base_score,
+        "hazard_count": hazard_count,
+        "synergy_multiplier": synergy,
+        "final_score_pct": final_score,
+    })
 
 
 def score_to_tier(score_pct: pd.Series) -> pd.Series:
-    # PHP: <=20 Very Safe, <=40 Safe, <=60 Moderate, <=80 High Risk, else Critical
+    """
+    Maps 0-100 continuous score to the 5 official safety classifications.
+
+    Thresholds:
+        - 0.00 - 20.00%: Very Safe (0)
+        - 20.01 - 40.00%: Safe (1)
+        - 40.01 - 60.00%: Moderate (2)
+        - 60.01 - 80.00%: High Risk (3)
+        - 80.01 - 100.0%: Critical Risk (4)
+    """
     bins = [-0.01, 20.0, 40.0, 60.0, 80.0, 100.0]
     return pd.cut(score_pct, bins=bins, labels=[0, 1, 2, 3, 4]).astype(int)
+
+
+# TODO: Evaluate dynamic micro-site bathymetric weight adjustments for deep-line vs shallow-reef training sites.
 
 
 def main():

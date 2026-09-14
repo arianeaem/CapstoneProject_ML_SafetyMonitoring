@@ -43,9 +43,35 @@ PROVISIONAL_CUTOFF_HORIZON_HOURS = 24
 
 
 def check_physical_breach(telemetry: dict) -> tuple[bool, list[str]]:
-    """telemetry keys expected: wind_speed, wind_gust (m/s), delta_p_3h (hPa), hs, swell_height (m),
-    current_speed (m/s), rain_rate_mm_hr (mm/hr), slp (hPa). Same units as the
-    trained forecasters' outputs."""
+    """
+    Evaluates individual telemetry variables against deterministic safety thresholds.
+
+    Business Logic / Meteorological Rationale:
+        1. Single-Variable Hard Limits: If sustained winds, gusts, wave heights, swells,
+           currents, rain rate, or minimum barometric pressure exceed safe operating
+           parameters, the session is instantly unsafe regardless of model confidence.
+        2. Context-Aware Compound Precursor Check:
+           A rapid 3-hour barometric drop (>= 2.5 hPa / 3h) is an established cyclone/storm
+           indicator. However, in tropical latitudes, semi-diurnal solar atmospheric tides
+           (the S2 oscillation) naturally drop pressure by 1.5 - 2.0 hPa every afternoon.
+           To prevent daily false alarms on calm sunny days, a rapid barometric drop only
+           triggers an emergency breach if accompanied by squall gusts (>= 38 km/h) or
+           heavy rain (>= 15 mm/hr).
+
+    Parameters:
+        telemetry (dict): Dictionary of physical readings:
+            - wind_speed (float): Sustained wind in m/s.
+            - wind_gust (float): Peak gust in m/s.
+            - hs (float): Significant wave height in meters.
+            - swell_height (float): Swell height in meters.
+            - current_speed (float): Ocean current speed in m/s.
+            - rain_rate_mm_hr (float): Precipitation rate in mm/hr.
+            - slp (float): Sea level pressure in hPa.
+            - delta_p_3h (float, optional): 3-hour barometric tendency in hPa.
+
+    Returns:
+        tuple[bool, list[str]]: (breached, list of human-readable breach explanations).
+    """
     reasons = []
 
     limits = SAFETY_THRESHOLDS if "SAFETY_THRESHOLDS" in globals() else HARD_GATE
@@ -69,10 +95,6 @@ def check_physical_breach(telemetry: dict) -> tuple[bool, list[str]]:
     if telemetry.get("slp", 1013.25) <= limits["pressure_hpa"]:
         reasons.append(f"pressure {telemetry['slp']:.1f} hPa <= {limits['pressure_hpa']} hPa limit")
 
-    # Context-Aware Compound Precursor Check:
-    # A rapid 3-hour barometric drop (>= 2.5 hPa / 3h) requires companion storm indicators
-    # (Squall Gusts >= 38.0 km/h [10.56 m/s] OR Rain Rate >= 15.0 mm/hr) to trigger an emergency breach.
-    # Normal tropical diurnal solar heating drops (1.5 - 2.0 hPa) on calm sunny days do NOT trigger a false alarm.
     delta_p = telemetry.get("delta_p_3h", 0.0)
     pressure_drop = abs(delta_p) if delta_p < 0 else delta_p
     wind_gust_ms = telemetry.get("wind_gust", 0.0)
@@ -90,7 +112,23 @@ def check_physical_breach(telemetry: dict) -> tuple[bool, list[str]]:
 
 
 def check_pagasa_override(pagasa: dict | None = None) -> tuple[bool, list[str]]:
-    """Evaluates active PAGASA cyclone signals, gale warnings, and tsunami alerts."""
+    """
+    Evaluates official PAGASA cyclone signals, gale warnings, and tsunami alerts.
+
+    Business Logic:
+        Government regulatory marine advisories supersede mathematical forecasting models.
+        TCWS Signal #3+, Gale Warnings, and Tsunami Warnings mandate immediate cessation
+        of all watercraft operations and freediving training.
+
+    Parameters:
+        pagasa (dict | None): Optional dictionary containing:
+            - tcws_signal (int): Tropical Cyclone Wind Signal (0-5).
+            - gale_warning (bool): Active Coast Guard gale warning flag.
+            - tsunami_warning (bool): Active PHIVOLCS tsunami advisory flag.
+
+    Returns:
+        tuple[bool, list[str]]: (breached, list of active advisory statements).
+    """
     if pagasa is None:
         return False, []
 
@@ -106,12 +144,27 @@ def check_pagasa_override(pagasa: dict | None = None) -> tuple[bool, list[str]]:
 
 def apply_safety_thresholds(ml_prediction: int, telemetry: dict, pagasa: dict | None = None) -> dict:
     """
-    Core Deterministic Safety Threshold Override:
-    Final Risk = max(ml_prediction, safety_threshold_result, pagasa_override).
-    A breach can only ever push the tier UP toward Critical.
+    Core Deterministic Safety Threshold Override.
 
-    This function is 100% pure physical/regulatory logic and has no concept
-    of forecast horizons or confidence-based suppression.
+    Mathematical Logic:
+        Final Risk Tier = max(ml_prediction, safety_threshold_tier, pagasa_override_tier).
+        A physical threshold or advisory breach can only ever escalate the risk tier
+        toward Critical Risk (Tier 4); it can never downgrade a conservative ML classification.
+
+    Parameters:
+        ml_prediction (int): Raw integer class (0=Very Safe .. 4=Critical Risk) from xgb_safety_classifier.
+        telemetry (dict): Physical weather and oceanographic variables.
+        pagasa (dict | None): Active PAGASA advisories.
+
+    Returns:
+        dict: Standardized safety evaluation dictionary containing:
+            - final_tier (int): Post-override integer risk tier (0-4).
+            - final_tier_name (str): Label (e.g. 'Critical Risk').
+            - ml_prediction (int): Pre-override classifier prediction.
+            - ml_prediction_name (str): Pre-override classifier label.
+            - safety_threshold_triggered (bool): True if any physical or advisory limit breached.
+            - hard_gate_triggered (bool): Backward-compatible alias.
+            - override_reasons (list[str]): Detailed explanations of all triggered constraints.
     """
     physical_breach, physical_reasons = check_physical_breach(telemetry)
     pagasa_breach, pagasa_reasons = check_pagasa_override(pagasa)
@@ -134,6 +187,9 @@ def apply_safety_thresholds(ml_prediction: int, telemetry: dict, pagasa: dict | 
 
 # Backwards compatibility alias
 apply_hard_gate = apply_safety_thresholds
+
+
+# TODO: Integrate high-resolution Doppler radar reflectivity feeds when PAGASA Batangas Doppler API is accessible.
 
 
 def evaluate_operational_safety(

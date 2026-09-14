@@ -64,15 +64,42 @@ SIGMA_GROWTH = {
 }
 
 
+# TODO: Implement Split Conformal Prediction sets to generate formal statistical confidence intervals for multi-horizon risk tiers.
+
+
 def load_regressor(name: str) -> xgb.XGBRegressor:
+    """
+    Loads a trained XGBoost physics regressor from the models directory.
+
+    Parameters:
+        name (str): Model filename prefix (e.g. 'xgb_wave_forecaster_hs').
+
+    Returns:
+        xgb.XGBRegressor: Initialized inference model.
+    """
     model = xgb.XGBRegressor(n_jobs=-1)
     model.load_model(str(MODELS_DIR / f"{name}.json"))
     return model
 
 
 def generate_classifier_dataset(df: pd.DataFrame, labels: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-    """Builds stacked multi-horizon dataset and generates predictions from the
-    trained wave, wind, and current forecasters as classifier input features."""
+    """
+    Constructs the multi-horizon meta-feature dataset for the safety classifier.
+
+    Pipeline Rationale:
+        1. Two-Stage Stacked Architecture: The safety classifier does not read raw historical weather
+           directly; instead, it consumes the predictions of the 11 specialized physics regressors.
+        2. Horizon Expansion: Duplicates feature blocks across all 8 operational horizons (1h to 144h).
+        3. P90 Uncertainty Augmentation: Computes upper-tail 90th percentile bounds ($P90 = \mu + 1.645 \cdot \sigma_H$)
+           to ensure extreme squall risks remain visible even when multi-day point forecasts smooth out.
+
+    Parameters:
+        df (pd.DataFrame): Base preprocessed historical features.
+        labels (pd.DataFrame): Canonical ground-truth risk tiers.
+
+    Returns:
+        tuple[pd.DataFrame, pd.Series]: (classifier_feature_matrix, target_risk_labels).
+    """
     print("Generating lagged/rolling historical features...")
     lagged = build_lagged_features(df)
 

@@ -24,7 +24,19 @@ def _find_project_root() -> Path:
     return Path(__file__).resolve().parent.parent.parent
 
 
-def build_training_features():
+def build_training_features() -> pd.DataFrame:
+    """
+    Constructs the canonical feature table from collocated raw meteorological and oceanographic records.
+
+    Physics Feature Engineering:
+        1. Cyclical Temporal Transforms: Encodes diurnal (hour_sin/cos) and seasonal (doy_sin/cos) cycles.
+        2. Non-Linear Wave Dynamics: Calculates wave steepness ($Hs / L$) and swell-to-total-energy ratio.
+        3. Barometric Tendency ($\Delta P_{3h}$): Captures rapid 3-hour atmospheric pressure drops.
+        4. Vector Current & Wind Components: Decomposes scalar speeds and directions into orthogonal $u$ and $v$ vectors.
+
+    Returns:
+        pd.DataFrame: Cleaned feature table saved to `data/processed/training_features.parquet`.
+    """
     root = _find_project_root()
     interim_path = root / "data" / "interim" / "collocated.parquet"
     processed_dir = root / "data" / "processed"
@@ -50,6 +62,10 @@ def build_training_features():
     print(f"wrote {len(df_clean)} rows, {df_clean.shape[1]} columns -> {out_path}")
     print(f"Columns ({df_clean.shape[1]}): {list(df_clean.columns)}")
     return df_clean
+
+
+# TODO: Evaluate adding tidal height harmonics (M2/S2 tidal constituents) when Batangas tide gauge telemetry is integrated.
+
 
 
 if __name__ == "__main__":

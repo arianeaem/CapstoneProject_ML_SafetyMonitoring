@@ -47,11 +47,24 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # ---------------------------------------------------------------------------
 # 1. Climatology Fitting & Lookup Table
 # ---------------------------------------------------------------------------
+# TODO: Implement automated daily cron job to pre-fetch Copernicus CMEMS 0.083-degree global ocean current vectors.
+
+
 def fit_and_save_climatology(train_features_path: Path = PROCESSED_TRAINING_FILE) -> pd.DataFrame:
     """
     Fits historical seasonal climatology (hour-of-day, day-of-year) mean vectors
-    for current_u and current_v using the historical training dataset.
-    Saves the lookup table to data/cache/currents_climatology.parquet.
+    for current_u and current_v using the training split.
+
+    Business Logic / Rationale:
+        CMEMS marine physics models only forecast up to 10 days ahead. For extended
+        16-day advance booking windows, historical diurnal-seasonal averages provide
+        a physically grounded baseline preventing arbitrary zero-drift assumptions.
+
+    Parameters:
+        train_features_path (Path): Path to preprocessed feature dataset.
+
+    Returns:
+        pd.DataFrame: Climatology lookup table indexed by (day_of_year, hour_of_day).
     """
     if not train_features_path.exists():
         logger.warning(f"Training features file {train_features_path} not found. Using neutral zeros fallback.")
