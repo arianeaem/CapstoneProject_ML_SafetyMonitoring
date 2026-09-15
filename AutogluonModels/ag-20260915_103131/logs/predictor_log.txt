@@ -1,0 +1,211 @@
+Beginning AutoGluon training... Time limit = 30s
+AutoGluon will save models to 'C:\Users\bryan\Capstone_Project\CapstoneProject_ML_SafetyMonitoring\AutogluonModels\ag-20260915_103131'
+=================== System Info ===================
+AutoGluon Version:  1.6.2
+Python Version:     3.10.11
+Operating System:   Windows
+Platform Machine:   AMD64
+Platform Version:   10.0.26200
+CPU Count:          8
+Pytorch Version:    2.13.0+cpu
+CUDA Version:       CUDA is not available
+GPU Memory:         
+Total GPU Memory:   Free: 0.00 GB, Allocated: 0.00 GB, Total: 0.00 GB
+GPU Count:          0
+Memory Avail:       0.42 GB / 7.78 GB (5.4%)
+Disk Space Avail:   174.84 GB / 475.83 GB (36.7%)
+===================================================
+
+Fitting with arguments:
+{'enable_ensemble': True,
+ 'eval_metric': MASE,
+ 'hyperparameters': {'DirectTabular': {},
+                     'RecursiveTabular': {},
+                     'SeasonalNaive': {}},
+ 'known_covariates_names': [],
+ 'num_val_windows': 1,
+ 'prediction_length': 144,
+ 'quantile_levels': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+ 'random_seed': 123,
+ 'refit_every_n_windows': 1,
+ 'refit_full': False,
+ 'skip_model_selection': False,
+ 'target': 'target',
+ 'time_limit': 30,
+ 'verbosity': 2}
+
+Inferred time series frequency: 'h'
+Provided train_data has 1356 rows, 1 time series. Median time series length is 1356 (min=1356, max=1356). 
+
+Provided data contains following columns:
+	target: 'target'
+
+AutoGluon will gauge predictive performance using evaluation metric: 'MASE'
+	This metric's sign has been flipped to adhere to being higher_is_better. The metric score can be multiplied by -1 to get the metric value.
+===================================================
+
+Starting training. Start time is 2026-09-15 18:31:39
+Models that will be trained: ['SeasonalNaive', 'RecursiveTabular', 'DirectTabular']
+Training timeseries model SeasonalNaive. Training for up to 4.4s of the 17.5s of remaining time.
+	Time limit exceeded... Skipping SeasonalNaive.
+Training timeseries model RecursiveTabular. Training for up to 4.3s of the 12.8s of remaining time.
+	-1.2174       = Validation score (-MASE)
+	1.28    s     = Training runtime
+	1.01    s     = Validation (prediction) runtime
+Training timeseries model DirectTabular. Training for up to 5.2s of the 10.4s of remaining time.
+	-0.8732       = Validation score (-MASE)
+	0.82    s     = Training runtime
+	0.16    s     = Validation (prediction) runtime
+Fitting 1 ensemble(s), in 1 layers.
+Training ensemble model WeightedEnsemble. Training for up to 9.3s.
+	Ensemble weights: {'DirectTabular': 0.66, 'RecursiveTabular': 0.34}
+	-0.8024       = Validation score (-MASE)
+	0.17    s     = Training runtime
+	1.17    s     = Validation (prediction) runtime
+Training complete. Models trained: ['RecursiveTabular', 'DirectTabular', 'WeightedEnsemble']
+Total runtime: 12.62 s
+Best model: WeightedEnsemble
+Best model score: -0.8024
+Additional data provided, testing on additional data. Resulting leaderboard will be sorted according to test score (`score_test`).
+Beginning AutoGluon training... Time limit = 30s
+AutoGluon will save models to 'C:\Users\bryan\Capstone_Project\CapstoneProject_ML_SafetyMonitoring\AutogluonModels\ag-20260915_103153'
+=================== System Info ===================
+AutoGluon Version:  1.6.2
+Python Version:     3.10.11
+Operating System:   Windows
+Platform Machine:   AMD64
+Platform Version:   10.0.26200
+CPU Count:          8
+Pytorch Version:    2.13.0+cpu
+CUDA Version:       CUDA is not available
+GPU Memory:         
+Total GPU Memory:   Free: 0.00 GB, Allocated: 0.00 GB, Total: 0.00 GB
+GPU Count:          0
+Memory Avail:       0.63 GB / 7.78 GB (8.2%)
+Disk Space Avail:   174.84 GB / 475.83 GB (36.7%)
+===================================================
+
+Fitting with arguments:
+{'enable_ensemble': True,
+ 'eval_metric': MASE,
+ 'hyperparameters': {'DirectTabular': {},
+                     'RecursiveTabular': {},
+                     'SeasonalNaive': {}},
+ 'known_covariates_names': [],
+ 'num_val_windows': 1,
+ 'prediction_length': 144,
+ 'quantile_levels': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+ 'random_seed': 123,
+ 'refit_every_n_windows': 1,
+ 'refit_full': False,
+ 'skip_model_selection': False,
+ 'target': 'target',
+ 'time_limit': 30,
+ 'verbosity': 2}
+
+Inferred time series frequency: 'h'
+Provided train_data has 1356 rows, 1 time series. Median time series length is 1356 (min=1356, max=1356). 
+
+Provided data contains following columns:
+	target: 'target'
+
+AutoGluon will gauge predictive performance using evaluation metric: 'MASE'
+	This metric's sign has been flipped to adhere to being higher_is_better. The metric score can be multiplied by -1 to get the metric value.
+===================================================
+
+Starting training. Start time is 2026-09-15 18:31:53
+Models that will be trained: ['SeasonalNaive', 'RecursiveTabular', 'DirectTabular']
+Training timeseries model SeasonalNaive. Training for up to 7.5s of the 30.0s of remaining time.
+	-0.8901       = Validation score (-MASE)
+	0.02    s     = Training runtime
+	4.81    s     = Validation (prediction) runtime
+Training timeseries model RecursiveTabular. Training for up to 8.4s of the 25.1s of remaining time.
+	-1.0211       = Validation score (-MASE)
+	0.27    s     = Training runtime
+	1.08    s     = Validation (prediction) runtime
+Training timeseries model DirectTabular. Training for up to 11.8s of the 23.7s of remaining time.
+	-6.5326       = Validation score (-MASE)
+	0.35    s     = Training runtime
+	0.15    s     = Validation (prediction) runtime
+Fitting 1 ensemble(s), in 1 layers.
+Training ensemble model WeightedEnsemble. Training for up to 23.1s.
+	Ensemble weights: {'RecursiveTabular': 0.04, 'SeasonalNaive': 0.96}
+	-0.8675       = Validation score (-MASE)
+	0.22    s     = Training runtime
+	5.89    s     = Validation (prediction) runtime
+Training complete. Models trained: ['SeasonalNaive', 'RecursiveTabular', 'DirectTabular', 'WeightedEnsemble']
+Total runtime: 7.17 s
+Best model: WeightedEnsemble
+Best model score: -0.8675
+Additional data provided, testing on additional data. Resulting leaderboard will be sorted according to test score (`score_test`).
+Beginning AutoGluon training... Time limit = 30s
+AutoGluon will save models to 'C:\Users\bryan\Capstone_Project\CapstoneProject_ML_SafetyMonitoring\AutogluonModels\ag-20260915_103206'
+=================== System Info ===================
+AutoGluon Version:  1.6.2
+Python Version:     3.10.11
+Operating System:   Windows
+Platform Machine:   AMD64
+Platform Version:   10.0.26200
+CPU Count:          8
+Pytorch Version:    2.13.0+cpu
+CUDA Version:       CUDA is not available
+GPU Memory:         
+Total GPU Memory:   Free: 0.00 GB, Allocated: 0.00 GB, Total: 0.00 GB
+GPU Count:          0
+Memory Avail:       0.42 GB / 7.78 GB (5.4%)
+Disk Space Avail:   174.84 GB / 475.83 GB (36.7%)
+===================================================
+
+Fitting with arguments:
+{'enable_ensemble': True,
+ 'eval_metric': MASE,
+ 'hyperparameters': {'DirectTabular': {},
+                     'RecursiveTabular': {},
+                     'SeasonalNaive': {}},
+ 'known_covariates_names': [],
+ 'num_val_windows': 1,
+ 'prediction_length': 144,
+ 'quantile_levels': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+ 'random_seed': 123,
+ 'refit_every_n_windows': 1,
+ 'refit_full': False,
+ 'skip_model_selection': False,
+ 'target': 'target',
+ 'time_limit': 30,
+ 'verbosity': 2}
+
+Inferred time series frequency: 'h'
+Provided train_data has 1356 rows, 1 time series. Median time series length is 1356 (min=1356, max=1356). 
+
+Provided data contains following columns:
+	target: 'target'
+
+AutoGluon will gauge predictive performance using evaluation metric: 'MASE'
+	This metric's sign has been flipped to adhere to being higher_is_better. The metric score can be multiplied by -1 to get the metric value.
+===================================================
+
+Starting training. Start time is 2026-09-15 18:32:06
+Models that will be trained: ['SeasonalNaive', 'RecursiveTabular', 'DirectTabular']
+Training timeseries model SeasonalNaive. Training for up to 7.5s of the 30.0s of remaining time.
+	-1.5691       = Validation score (-MASE)
+	0.03    s     = Training runtime
+	6.48    s     = Validation (prediction) runtime
+Training timeseries model RecursiveTabular. Training for up to 7.8s of the 23.4s of remaining time.
+	-1.3368       = Validation score (-MASE)
+	0.79    s     = Training runtime
+	1.95    s     = Validation (prediction) runtime
+Training timeseries model DirectTabular. Training for up to 10.3s of the 20.5s of remaining time.
+	-1.6284       = Validation score (-MASE)
+	0.57    s     = Training runtime
+	0.23    s     = Validation (prediction) runtime
+Fitting 1 ensemble(s), in 1 layers.
+Training ensemble model WeightedEnsemble. Training for up to 19.7s.
+	Ensemble weights: {'DirectTabular': 0.22, 'RecursiveTabular': 0.78}
+	-1.3122       = Validation score (-MASE)
+	0.42    s     = Training runtime
+	2.18    s     = Validation (prediction) runtime
+Training complete. Models trained: ['SeasonalNaive', 'RecursiveTabular', 'DirectTabular', 'WeightedEnsemble']
+Total runtime: 10.85 s
+Best model: WeightedEnsemble
+Best model score: -1.3122
+Additional data provided, testing on additional data. Resulting leaderboard will be sorted according to test score (`score_test`).

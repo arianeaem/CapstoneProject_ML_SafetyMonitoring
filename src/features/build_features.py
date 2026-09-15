@@ -64,8 +64,6 @@ def build_training_features() -> pd.DataFrame:
     return df_clean
 
 
-# TODO: Evaluate adding tidal height harmonics (M2/S2 tidal constituents) when Batangas tide gauge telemetry is integrated.
-
 
 
 if __name__ == "__main__":

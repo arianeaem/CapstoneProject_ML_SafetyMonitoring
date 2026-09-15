@@ -324,8 +324,6 @@ def score_to_tier(score_pct: pd.Series) -> pd.Series:
     return pd.cut(score_pct, bins=bins, labels=[0, 1, 2, 3, 4]).astype(int)
 
 
-# TODO: Evaluate dynamic micro-site bathymetric weight adjustments for deep-line vs shallow-reef training sites.
-
 
 def main():
     print(f"Loading {FEATURES_PATH}")
