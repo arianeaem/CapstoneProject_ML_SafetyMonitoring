@@ -294,7 +294,7 @@ def main():
     print("\n" + "=" * 70)
     print("OVERALL VALIDATION RESULTS:")
     print("=" * 70)
-    print(f"  Weighted F1:           {weighted_f1:.4f}  (PRD target >= 0.92)")
+    print(f"  Weighted F1:           {weighted_f1:.4f}  (Target Benchmark >= 0.92)")
     print(f"  Asymmetric Cost Score: {cost:.4f} (lower is safer)")
     print("\nPer-class report:")
     print(classification_report(val_y, val_preds, target_names=TIER_NAMES, zero_division=0))

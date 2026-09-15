@@ -132,7 +132,7 @@ def export_classifier(features: list, sample_X: pd.DataFrame) -> bool:
 
 
 def benchmark_latency(onnx_path: Path, n_features: int, n_calls: int = 200) -> float:
-    """Average single-row inference time in ms — PRD target is <5ms per model call."""
+    """Average single-row inference time in ms (Service SLA budget target: <5ms per model call)."""
     session = ort.InferenceSession(str(onnx_path))
     dummy = np.asarray(np.random.rand(1, n_features), dtype=np.float32)
     import time
@@ -201,7 +201,7 @@ def main():
         print("WARNING: one or more models failed parity verification — do NOT use those "
               ".onnx files in the FastAPI service until this is resolved.")
 
-    print("\nLatency benchmark (target: <5ms per call, PRD Section 9.1):")
+    print("\nLatency benchmark (High-performance inference target: <5ms per call):")
     sample_paths = [
         (ONNX_DIR / f"{WAVE_MODELS[0]}.onnx", len(wave_feats)),
         (ONNX_DIR / f"{WIND_MODELS[0]}.onnx", len(wind_feats)),

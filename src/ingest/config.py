@@ -38,7 +38,7 @@ LON_MIN, LON_MAX = 120.7, 121.1
 LAT_MIN, LAT_MAX = 13.5, 14.0
 SITE_LAT, SITE_LON = 13.7481, 120.9408  # exact dive-site point for post-collocation extraction
 
-# 3-year historical window — capstone-scoped (see PRD Section 7.2 / 15)
+# 3-year historical observation window (2022-01-01 to 2024-12-31)
 START_DATE = "2022-01-01"
 END_DATE = "2024-12-31"
 

@@ -1,5 +1,5 @@
 """
-Physics-Informed Feature Engineering module (PRD Section 8).
+Physics-Informed Feature Engineering module.
 Reusable module called during both offline training and live inference.
 """
 

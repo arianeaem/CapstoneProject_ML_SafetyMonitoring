@@ -189,9 +189,6 @@ def apply_safety_thresholds(ml_prediction: int, telemetry: dict, pagasa: dict | 
 apply_hard_gate = apply_safety_thresholds
 
 
-# TODO: Integrate high-resolution Doppler radar reflectivity feeds when PAGASA Batangas Doppler API is accessible.
-
-
 def evaluate_operational_safety(
     horizon_hours: int,
     ml_prediction: int,

@@ -99,7 +99,7 @@ def main():
         print("=" * 70)
         weighted_f1 = float(f1_score(true_tiers, preds, average="weighted"))
         cost = asymmetric_cost_score(true_tiers, preds)
-        print(f"Weighted F1:          {weighted_f1:.4f}  (PRD target >= 0.92)")
+        print(f"Weighted F1:          {weighted_f1:.4f}  (Target Benchmark >= 0.92)")
         print(f"Asymmetric Cost Score: {cost:.4f} (lower is safer)")
         print("\nPer-class report:")
         print(classification_report(true_tiers, preds, target_names=TIER_NAMES,

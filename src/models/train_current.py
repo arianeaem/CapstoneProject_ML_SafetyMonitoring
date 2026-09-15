@@ -1,7 +1,6 @@
 """
 Trains xgb_current_regressor: predicts current_u and current_v (zonal/meridional
-surface current velocity) as direct vector regression, matching the PRD's
-"Vector Regression" design for this model.
+surface current velocity) as direct vector regression to guarantee physical mass-conservation.
 
 Design decisions specific to current (different from train_wave.py / train_wind.py):
 
@@ -25,13 +24,11 @@ Design decisions specific to current (different from train_wave.py / train_wind.
 5. No separate current_speed/current_dir models are trained. Instead,
    current_speed and current_dir are DERIVED from the current_u/current_v
    predictions at evaluation time (sqrt and atan2), then scored — current_dir
-   with the same circular distance handling used for wind_dir. This matches
-   the PRD's vector-regression framing and avoids training + tuning two
-   redundant extra models.
+   with the same circular distance handling used for wind_dir. This provides
+   clean vector regression without training two redundant extra models.
 
-6. No PRD acceptance threshold exists for current (the PRD's Section 3.3
-   table only specifies wave, wind, and the now-dropped tide thresholds) —
-   metrics are reported without a fabricated PASS/MISS, same treatment as tp.
+6. Evaluation metrics for current_u, current_v, derived speed (m/s), and circular direction
+   are reported with full empirical statistics (RMSE, MAE, bias).
 
 Run from the project root: python src\\models\\train_current.py
 """

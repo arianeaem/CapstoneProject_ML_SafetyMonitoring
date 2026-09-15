@@ -1,5 +1,5 @@
 """
-Temporal Split & Walk-Forward Cross-Validation Harness (PRD Day 5).
+Temporal Split & Walk-Forward Cross-Validation Harness.
 Guarantees strictly chronological splits to prevent data leakage in time-series forecasting.
 """
 
@@ -26,10 +26,27 @@ def load_training_features() -> pd.DataFrame:
     return pd.read_parquet(path)
 
 
-def temporal_split(df: pd.DataFrame, train_frac: float = 0.70, val_frac: float = 0.15):
+def temporal_split(
+    df: pd.DataFrame,
+    train_frac: float = 0.70,
+    val_frac: float = 0.15
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Chronological 3-way split: Train (70%), Validation (15%), Test (15%).
-    Never shuffles data to prevent temporal lookahead leakage.
+    Splits time-indexed dataset into chronological Train (70%), Validation (15%), and Test (15%) subsets.
+
+    Time-Series Scientific Rationale:
+        Random k-fold cross-validation or data shuffling is strictly forbidden in weather and ocean
+        forecasting. In maritime environments, atmospheric variables possess strong multi-day auto-correlations;
+        random shuffling would leak future storm signatures into past training folds, generating artificially
+        inflated accuracy scores that collapse in production.
+
+    Parameters:
+        df (pd.DataFrame): Time-indexed dataset sorted in ascending chronological order.
+        train_frac (float): Fraction of initial records allocated to model training (default 0.70).
+        val_frac (float): Fraction allocated to hyperparameter tuning & early stopping (default 0.15).
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: (train_df, val_df, test_df).
     """
     n = len(df)
     train_end = int(n * train_frac)
@@ -42,9 +59,22 @@ def temporal_split(df: pd.DataFrame, train_frac: float = 0.70, val_frac: float =
 
 def walk_forward_folds(df: pd.DataFrame, n_splits: int = 5, gap_hours: int = 48):
     """
-    Walk-forward time-series split with an embargo gap between train and test.
-    Yields (fold_train_df, fold_val_df) pairs ready for model fitting and evaluation.
+    Generates expanding-window walk-forward cross-validation splits with an embargo gap.
+
+    Methodological Rationale:
+        The 48-hour embargo gap between train and validation splits ensures that multi-day lagged
+        features (e.g., 24h/48h autoregressive momentum) from the training window cannot overlap
+        or artificially inform validation predictions.
+
+    Parameters:
+        df (pd.DataFrame): Sorted time-series feature matrix.
+        n_splits (int): Number of expanding walk-forward folds.
+        gap_hours (int): Embargo buffer length in hours (default 48 hours).
+
+    Yields:
+        tuple[pd.DataFrame, pd.DataFrame]: (fold_train_df, fold_val_df) pairs.
     """
     tscv = TimeSeriesSplit(n_splits=n_splits, gap=gap_hours)
     for tr_idx, val_idx in tscv.split(df):
         yield df.iloc[tr_idx], df.iloc[val_idx]
+

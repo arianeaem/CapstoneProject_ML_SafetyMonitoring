@@ -1,6 +1,6 @@
 """
-Baseline Comparison Suite (PRD Section 8 & Section 10).
-Compares multi-horizon ML forecaster models against two mandatory baselines:
+Baseline Comparison Suite: ML Forecasters vs Physical Baselines.
+Compares multi-horizon ML forecaster models against two standard baselines:
 1. Persistence Baseline: predicted value(t+H) = value(t) (lag0h observation)
 2. Climatological Baseline: predicted value(t+H) = historical mean for (hour-of-day, day-of-year)
    fit strictly on the `train` split only to prevent lookahead leakage.
@@ -168,7 +168,7 @@ def plot_skill_decay(df_results: pd.DataFrame):
 
 def main():
     print("=" * 70)
-    print("MANDATORY BASELINE COMPARISON (PRD Section 8 & 10)")
+    print("BASELINE COMPARISON BENCHMARK SUITE")
     print("Models vs Persistence vs Climatology across all 5 Horizons")
     print("Includes Linear Regressors + Circular Wind & Current Directions")
     print("=" * 70 + "\n")

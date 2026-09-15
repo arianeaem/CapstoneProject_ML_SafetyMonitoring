@@ -11,8 +11,8 @@ Design decisions specific to wind (different from train_wave.py):
    model just learn that formula instead of anything meteorologically useful,
    producing a fake perfect score that means nothing.
 
-2. hs, tp, swell_height, wind_wave_height (wave outputs) also excluded. Per
-   the PRD's architecture, wave/wind/current regressors are parallel Stage-1
+2. hs, tp, swell_height, wind_wave_height (wave outputs) also excluded. In our
+   2-stage stacked architecture, wave/wind/current regressors are parallel Stage-1
    models feeding into the same Stage-2 safety classifier, not chained to each
    other. Wind causes waves, not the reverse — using wave state to predict
    wind would be circular in the pipeline and physically backwards.
@@ -21,10 +21,10 @@ Design decisions specific to wind (different from train_wave.py):
    A plain regression on raw degrees would treat crossing that boundary as a
    huge error. Standard fix used here: train on sin/cos of the angle as two
    auxiliary regressions, reconstruct the angle via atan2 at evaluation time,
-   and score with proper circular distance — this satisfies the PRD's "cyclic
-   angular loss" requirement without a custom XGBoost objective.
+   and score with proper circular distance — this satisfies cyclic angular
+   loss requirements without a custom XGBoost objective.
 
-4. PRD's explicit acceptance threshold here is wind_speed MAE <= 1.2 m/s
+4. The target domain acceptance threshold is wind_speed MAE <= 1.2 m/s
    (note: MAE, not RMSE — different from hs's RMSE threshold in train_wave.py).
 
 Run from the project root: python src\\models\\train_wind.py
@@ -67,7 +67,7 @@ EXCLUDED_FEATURES = ["wind_u", "wind_v", "wind_current_alignment"] + WAVE_TARGET
 # after the first run revealed it needed separate tuning.
 RETUNE_TARGETS = []
 
-ACCEPTANCE_THRESHOLDS_MAE = {"wind_speed": 1.2}  # m/s, MAE — PRD Section 3.3
+ACCEPTANCE_THRESHOLDS_MAE = {"wind_speed": 1.2}  # m/s, MAE target threshold
 
 
 def get_feature_columns(df):
