@@ -381,32 +381,13 @@ def predict(request: ForecastRequest):
     return ForecastResponse(predictions=results, skipped_leading_rows=0)
 
 
-# ===========================================================================
-# /assess-booking: The Core Laravel Integration Endpoint
-# ===========================================================================
-@app.post("/assess-booking", response_model=BookingAssessmentResponse)
-def assess_booking(request: BookingAssessmentRequest):
+def _run_inference_pipeline(raw_df: pd.DataFrame, pagasa_dict: dict = None):
     """
-    Evaluates a planned freediving booking session for the Laravel backend.
-
-    Business Logic & Decision Pipeline:
-        1. Contextual Boundary Ingestion: Receives Open-Meteo atmospheric readings for the planned date.
-        2. CMEMS Current Injection: Pulls Copernicus ocean current vectors to model drift risk.
-        3. Multi-Model Physics Forecast: Produces 12 ONNX model predictions (wave, wind, currents).
-        4. Operational Cutoff Policy:
-           - T-1h (Tactical): Unlocks authoritative GO / NO_GO clearance.
-           - T-6h to T-24h (Provisional): Suppresses discrete classification to prevent false reassurance
-             from MSE variance smoothing; returns raw physics and P90 tail risk bounds.
-           - T-48h+ (Extended): Evaluates broad climatological trend for scheduling.
-        5. Session Worst-Hour Reduction: Identifies the single most hazardous hour during the dive window
-           (e.g., peak wind gust or tidal current surge) to dictate the overall safety recommendation.
-
-    Parameters:
-        request (BookingAssessmentRequest): Session date, start time, end time, and boundary telemetry.
-
-    Returns:
-        BookingAssessmentResponse: Comprehensive verdict including operational status,
-                                   overall 5-tier recommendation, worst hour summary, and hourly details.
+    Internal inference pipeline helper:
+    1. Injects CMEMS currents if missing.
+    2. Runs feature engineering.
+    3. Runs 11 wave/wind/current XGBoost ONNX regressors.
+    4. Runs xgb_safety_classifier ONNX model.
     """
     # Check if ocean currents are missing or unpopulated; if so, inject from CMEMS cache/climatology
     needs_currents = (

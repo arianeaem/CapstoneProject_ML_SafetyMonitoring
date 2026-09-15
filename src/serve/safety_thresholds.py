@@ -4,7 +4,7 @@ Sits directly on top of xgb_safety_classifier's output: any breach of a physical
 threshold or an active PAGASA storm signal forces Critical Risk regardless of what
 the classifier predicted.
 
-OPERATIONAL HORIZON POLICY (PRD Section 8 & Empirical Finding):
+OPERATIONAL HORIZON POLICY (Safety Framework & Empirical Horizon Validation):
 - H = 1h (Tactical Departure Window):
     * ML Safety Classifier is ACTIVE: "TACTICAL_CLEARANCE"
     * High model fidelity (Empirical Critical FNR = 4.5%, Precision = 96.8%).
