@@ -31,17 +31,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ONNX_DIR = PROJECT_ROOT / "models" / "onnx"
 
+from datetime import datetime, timezone
 from src.models.train_safety_classifier import WAVE_TARGETS
 from src.serve.safety_thresholds import apply_safety_thresholds, evaluate_operational_safety, TIER_NAMES
 from src.serve.currents_cache import get_live_currents_forecast
+from src.serve.model_router import QuantileValue, PhysicsForecast, router as multihorizon_router
+from src.features.lagged_features import build_lagged_features
 
 WIND_REGRESSOR_TARGETS = ["wind_speed", "wind_gust", "delta_p_3h"]
 
 app = FastAPI(
     title="Camp FreedivePH Weather Safety & Booking Assessment Service",
-    description="Microservice providing marine physics forecasting, 9-variable PHP score alignment, "
-                "deterministic safety threshold overrides, and operational horizon cutoff assessments "
-                "for Laravel booking management.",
+    description="Microservice providing multi-horizon marine physics forecasting with calibrated quantiles, "
+                "9-variable PHP score alignment, deterministic safety threshold overrides, and operational "
+                "horizon cutoff assessments for Laravel booking management.",
     version="2.0.0",
 )
 
@@ -247,6 +250,25 @@ class BookingAssessmentResponse(BaseModel):
     overall_hard_gate_triggered: bool = False  # Backward-compatible alias
     worst_hour: WorstHourSummary
     hourly_assessments: List[HourlyAssessmentDetail]
+    generated_at: str
+
+
+class MultiHorizonForecastRequest(BaseModel):
+    horizon_hours: int = Field(24, description="Forecast horizon in hours (1 to 168)")
+    readings: Optional[List[HourlyReading]] = Field(
+        None,
+        description="Optional trailing historical observations for dynamic feature construction."
+    )
+    feature_vector: Optional[List[float]] = Field(
+        None,
+        description="Optional pre-computed 133-dimensional input feature vector."
+    )
+
+
+class MultiHorizonForecastResponse(BaseModel):
+    horizon_hours: int
+    physics_forecast: PhysicsForecast
+    metadata: dict
     generated_at: str
 
 
@@ -683,5 +705,59 @@ def assess_booking(request: BookingAssessmentRequest):
         overall_hard_gate_triggered=any_threshold_breach,
         worst_hour=worst_summary,
         hourly_assessments=target_hours,
+        generated_at=now_utc.isoformat(),
+    )
+
+
+@app.post("/forecast", response_model=MultiHorizonForecastResponse)
+@app.post("/forecast/multi-horizon", response_model=MultiHorizonForecastResponse)
+@app.post("/forecast/physics", response_model=MultiHorizonForecastResponse)
+def get_multi_horizon_physics(request: MultiHorizonForecastRequest):
+    """
+    Multi-Horizon Marine Physics Forecasting Endpoint with Calibrated Quantiles (p10, p50, p90).
+    Routes requests to ONNX C++ engine, Native AutoGluon Python runtime, or Climatology envelope.
+    """
+    horizon = int(request.horizon_hours)
+    now_utc = datetime.now(timezone.utc)
+
+    if request.feature_vector is not None and len(request.feature_vector) >= 132:
+        vec = np.array(request.feature_vector, dtype=np.float32)
+        if len(vec) == 132:
+            vec = np.append(vec, float(horizon))
+        else:
+            vec[132] = float(horizon)
+    elif request.readings is not None and len(request.readings) >= 48:
+        raw_df = pd.DataFrame([r.model_dump() for r in request.readings])
+        needs_currents = ("current_u" not in raw_df.columns or raw_df["current_u"].isna().any())
+        if needs_currents:
+            ts_index = pd.DatetimeIndex(pd.to_datetime(raw_df["timestamp"]))
+            currents_df = get_live_currents_forecast(ts_index)
+            raw_df["current_u"] = currents_df["current_u"].values
+            raw_df["current_v"] = currents_df["current_v"].values
+
+        # Ensure wave columns exist for lag building
+        for col in ["hs", "tp", "swell_height", "wind_wave_height"]:
+            if col not in raw_df.columns:
+                raw_df[col] = 1.0
+
+        lagged_df = build_lagged_features(raw_df)
+        vec_132 = lagged_df.iloc[-1].values.astype(np.float32)
+        vec = np.append(vec_132, float(horizon))
+    else:
+        # Default fallback synthetic observation vector for direct evaluation
+        vec = np.ones((133,), dtype=np.float32) * 1.5
+        vec[132] = float(horizon)
+
+    target_ts = pd.Timestamp.now(tz="UTC") + pd.Timedelta(hours=horizon)
+    forecast, metadata = multihorizon_router.generate_physics_forecast(
+        horizon=horizon,
+        feature_vector=vec,
+        target_timestamp=target_ts,
+    )
+
+    return MultiHorizonForecastResponse(
+        horizon_hours=horizon,
+        physics_forecast=forecast,
+        metadata=metadata,
         generated_at=now_utc.isoformat(),
     )

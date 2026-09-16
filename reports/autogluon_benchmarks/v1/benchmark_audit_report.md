@@ -24,13 +24,13 @@ In the initial single-cut test split, a sharp non-physical spike occurred specif
 2. **MASE Denominator Compression**:
    $$\text{MASE} = \frac{\frac{1}{H}\sum_{t=1}^H |y_t - \hat{y}_t|}{\frac{1}{T-m}\sum_{t=m+1}^T |y_t - y_{t-m}|}$$
    Because the seasonal difference on the exact boundary was zero, the naive scaling denominator on that specific cut was artificially compressed. Carrying the flat holiday anomaly forward into the next 6 days inflated test MASE to $>3.0$.
-3. **Multi-Window Validation Resolution**:
-   When re-evaluated across multiple validation windows that don't terminate on that single flat-boundary day, the true predictive performance is restored to monotonic alignment:
-   * **`current_u` ($H=144\text{h}$)**: $\text{MASE} = \mathbf{0.802}$ (Winner: `WeightedEnsemble`)
-   * **`current_v` ($H=144\text{h}$)**: $\text{MASE} = \mathbf{0.868}$ (Winner: `WeightedEnsemble`)
-   * **`slp` ($H=144\text{h}$)**: $\text{MASE} = \mathbf{1.312}$ (Winner: `WeightedEnsemble`)
+3. **Multi-Window Validation & Production Routing**:
+   When re-evaluated across multiple rolling validation windows that don't terminate on that single flat-boundary day, the true predictive performance is restored to monotonic alignment:
+   * **`current_u` ($H=144\text{h}$ benchmark)**: $\text{MASE} = \mathbf{0.802}$ (Winner: `WeightedEnsemble`)
+   * **`current_v` ($H=144\text{h}$ benchmark)**: $\text{MASE} = \mathbf{0.868}$ (Winner: `WeightedEnsemble`)
+   * **`slp` ($H=144\text{h}$ benchmark)**: $\text{MASE} = \mathbf{1.312}$ (Winner: `WeightedEnsemble`)
 
-These corrected values have been updated in [`production_model_selection.json`](./production_model_selection.json).
+   **Coast Guard Safety Gating Policy**: Although the multi-window benchmark confirmed that ML regression achieves $\text{MASE} \approx 0.80 - 0.87$, instantaneous tidal velocity phase errors compound beyond 3 days. To protect Coast Guard current-speed ceiling checks ($\ge 0.80\text{ m/s}$), **point ML regression for `current_u` and `current_v` is bypassed in production for $H \in \{96\text{h}, 144\text{h}, 168\text{h}\}$** and mapped directly to `BatangasClimatologyFallback` (`data/cache/currents_climatology.parquet`) in [`production_model_selection.json`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/production_model_selection.json). In the production matrix, these cells are designated as **`N/A — Climatology Fallback`**.
 
 ---
 
@@ -38,7 +38,7 @@ These corrected values have been updated in [`production_model_selection.json`](
 
 As observed, for several variables at $H \ge 72\text{h}$ (e.g. `wind_dir` past 12h, `hs` at 72h, and `wind_speed` at 72h), MASE exceeds $1.00$. In coastal microclimates, this means point forecasts at 3 to 7 days lose deterministic precision relative to seasonal persistence.
 
-Rather than hiding this, each entry in [`production_model_selection.json`](./production_model_selection.json) now explicitly carries an **operational confidence tier** and **client-facing advisory**:
+Rather than hiding this, each entry in [`production_model_selection.json`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/production_model_selection.json) explicitly carries a typed **operational confidence tier**, **serving type**, and **client-facing advisory**:
 
 ```json
 {
@@ -46,15 +46,17 @@ Rather than hiding this, each entry in [`production_model_selection.json`](./pro
   "horizon": 72,
   "model": "DirectTabular",
   "mase": 1.225,
-  "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-  "ui_advisory": "Extended Outlook (Climatological Bound): Regional microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal climatological envelope."
+  "serving_type": "onnx",
+  "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+  "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90)."
 }
 ```
 
-### Three Operational Tiers for Phase 2 UI:
-1. **`HIGH_CONFIDENCE` ($\text{MASE} \le 0.50$, $H \le 24\text{h}$)**: High deterministic skill; direct dockside Go/No-Go dispatch.
+### The Four Operational Confidence Tiers:
+1. **`HIGH_CONFIDENCE` ($\text{MASE} \le 0.50$, $H \le 24\text{h}$)**: High deterministic precision; direct dockside Go/No-Go dispatch.
 2. **`MODERATE_CONFIDENCE` ($0.50 < \text{MASE} \le 1.00$, $24\text{h} < H \le 72\text{h}$)**: Planning outlook; daily updates recommended.
-3. **`LOW_CONFIDENCE_CLIMATOLOGY_BOUND` ($\text{MASE} > 1.00$, $H > 72\text{h}$)**: Displayed with explicit warning badge and seasonal uncertainty envelope.
+3. **`LOW_CONFIDENCE_ML_UNCERTAIN` ($\text{MASE} > 1.00$, source: `onnx` / `native_ensemble`)**: Live ML model evaluated with standard parametric quantile spreads ($\Delta Q = p_{90} - p_{10}$). Laravel displays an uncertainty badge without invoking climatology lookups.
+4. **`LOW_CONFIDENCE_CLIMATOLOGY_BOUND` (source: `climatology_fallback`)**: True data-source substitution (ocean currents $H > 72\text{h}$). Evaluated against historical 90th percentile seasonal bounds ($\max(u_{90}, v_{90})$) loaded from `data/cache/currents_climatology.parquet`.
 
 ---
 
@@ -91,11 +93,27 @@ Chronos2 was explicitly evaluated on the benchmark:
 
 ## 5. Artifact Persistence & Versioning (Point 5)
 
-All benchmark outputs have been permanently relocated from the ephemeral cache into the versioned repository path under [`reports/autogluon_benchmarks/v1/`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/):
+All benchmark outputs have been permanently relocated from the ephemeral cache into the versioned repository directory [`reports/autogluon_benchmarks/v1/`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/):
 
-1. **`full_leaderboard.csv`**: Raw leaderboard of 396 model runs across all 99 cells.
-2. **`production_model_selection.json`**: Audited mapping with corrected $H=144\text{h}$ metrics and confidence tiers.
-3. **`phase0_benchmark_leaderboard.png`**: Model family comparison chart.
-4. **`horizon_degradation_curve.png`**: Monotonic degradation curve ($1\text{h} \rightarrow 168\text{h}$).
-5. **`quantile_fan_chart.png`**: $72\text{h}$ history + $168\text{h}$ predictive fan cone.
-6. **`computational_efficiency_comparison.png`**: Latency & training comparison justifying TFT/Chronos2 omission.
+1. **Leaderboard**: [`full_leaderboard.csv`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/full_leaderboard.csv) (Raw leaderboard of 396 model runs across all 99 cells)
+2. **Production Model Selection**: [`production_model_selection.json`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/production_model_selection.json) (Audited mapping with corrected $H=144\text{h}$ metrics and operational confidence tiers)
+3. **Leaderboard Chart**: [`phase0_benchmark_leaderboard.png`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/phase0_benchmark_leaderboard.png) (Model family comparison chart across all 9 horizons)
+4. **Degradation Curve**: [`horizon_degradation_curve.png`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/horizon_degradation_curve.png) (Monotonic predictive degradation curve from $1\text{h} \rightarrow 168\text{h}$)
+5. **Quantile Fan Chart**: [`quantile_fan_chart.png`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/quantile_fan_chart.png) ($72\text{h}$ realized history + $168\text{h}$ predictive fan cone)
+6. **Efficiency Comparison**: [`computational_efficiency_comparison.png`](file:///c:/Users/bryan/Capstone_Project/CapstoneProject_ML_SafetyMonitoring/reports/autogluon_benchmarks/v1/computational_efficiency_comparison.png) (Latency & training comparison justifying TFT/Chronos2 omission)
+
+---
+
+## 6. Multivariate Cross-Channel Covariate Opportunity (Phase 4 Research Backlog)
+
+### Key Empirical Discovery:
+During the model evaluation phase, a multivariate ablation probe on Barometric Pressure (`slp`) at $H=24\text{h}$ with cross-channel covariates (wind speed, wind gusts, wave steepness) revealed:
+* **Univariate DirectTabular (Production Baseline)**: $\text{MASE} = 1.497$
+* **Multivariate GBDT (Tabular XGB/LightGBM)**: $\text{MASE} = \mathbf{0.6210}$ ($>2.4\times$ error reduction)
+* **Multivariate WeightedEnsemble**: $\text{MASE} = \mathbf{0.6061}$
+* **Multivariate TFT**: $\text{MASE} = \mathbf{0.4893}$
+
+### Analysis & Next Steps:
+1. **Physical Mechanism**: Barometric pressure and long-lead wind dynamics in Batangas are driven by cross-channel thermodynamic coupling (synoptic pressure changes precede local wind shifts and wave growth).
+2. **Phase 1 Priority**: The Phase 1 ONNX pipeline delivers a robust, tested baseline for all 11 variables across 9 horizons.
+3. **Phase 4 Backlog Item**: Rather than discarding the multivariate findings, we log a dedicated **Phase 4 Re-Benchmarking Experiment** to train multivariate GBDT models with 11-channel cross-lag features. This will harvest the $>2.4\times$ accuracy improvement for `slp` while maintaining sub-5ms ONNX serving latency.

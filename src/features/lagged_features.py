@@ -26,11 +26,18 @@ ROLLING_WINDOW = 24
 
 
 def build_lagged_features(df: pd.DataFrame) -> pd.DataFrame:
+    df_in = df.copy()
+    if "wind_u" not in df_in.columns and "wind_speed" in df_in.columns and "wind_dir" in df_in.columns:
+        import numpy as np
+        rad = np.radians(df_in["wind_dir"])
+        df_in["wind_u"] = -df_in["wind_speed"] * np.sin(rad)
+        df_in["wind_v"] = -df_in["wind_speed"] * np.cos(rad)
+
     cols: dict[str, pd.Series] = {}
 
     for var in RAW_VARS:
         for lag in LAG_HOURS:
-            cols[f"{var}_lag{lag}h"] = df[var].shift(lag)
+            cols[f"{var}_lag{lag}h"] = df_in[var].shift(lag)
 
         # .shift(1) BEFORE .rolling() is deliberate: a rolling window computed
         # directly on df[var] would include the CURRENT hour in its own "history"
@@ -38,10 +45,10 @@ def build_lagged_features(df: pd.DataFrame) -> pd.DataFrame:
         # never touching t itself. This is the exact leakage mistake this whole
         # project has already caught and fixed once (the original random-split
         # bug); don't reintroduce a subtler version of it here.
-        shifted = df[var].shift(1)
+        shifted = df_in[var].shift(1)
         cols[f"{var}_roll_mean{ROLLING_WINDOW}h"] = shifted.rolling(ROLLING_WINDOW).mean()
         cols[f"{var}_roll_std{ROLLING_WINDOW}h"] = shifted.rolling(ROLLING_WINDOW).std()
         cols[f"{var}_roll_min{ROLLING_WINDOW}h"] = shifted.rolling(ROLLING_WINDOW).min()
         cols[f"{var}_roll_max{ROLLING_WINDOW}h"] = shifted.rolling(ROLLING_WINDOW).max()
 
-    return pd.DataFrame(cols, index=df.index)
+    return pd.DataFrame(cols, index=df_in.index)

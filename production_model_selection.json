@@ -11,7 +11,12 @@
     "horizon": 1,
     "mase": 0.0194,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/current_u_H1.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -25,7 +30,13 @@
     "horizon": 6,
     "mase": 0.0029,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/current_u_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -39,7 +50,13 @@
     "horizon": 12,
     "mase": 0.501,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/current_u_H12/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "DirectTabular",
@@ -53,7 +70,12 @@
     "horizon": 24,
     "mase": 0.1883,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/current_u_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -67,7 +89,13 @@
     "horizon": 48,
     "mase": 0.9461,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/current_u_H48/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "RecursiveTabular",
@@ -81,11 +109,16 @@
     "horizon": 72,
     "mase": 0.9335,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/current_u_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
-    "model": "RecursiveTabular",
-    "score_test": -0.7921,
+    "model": "BatangasClimatologyFallback",
+    "score_test": null,
     "score_val": -4.5158724339,
     "pred_time_test": 1.78,
     "pred_time_val": 2.1190111637,
@@ -93,13 +126,20 @@
     "fit_order": 2,
     "variable": "current_u",
     "horizon": 96,
-    "mase": 0.7921,
-    "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "mase": null,
+    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
+    "ui_advisory": "Extended Outlook (Climatological Fallback): Ocean current velocity exceeds 72h deterministic prediction skill. Safety thresholds evaluated against historical seasonal climatology envelope.",
+    "source_artifact": "data/cache/currents_climatology.parquet",
+    "note": "Point ML regression bypassed for H>72h; routed to Batangas Seasonal Climatology envelope for Coast Guard current-ceiling compliance.",
+    "serving_type": "climatology_fallback",
+    "serving_path": "data/cache/currents_climatology.parquet",
+    "serving_engine": "climatology_parquet",
+    "export_to_onnx": false,
+    "serving_notes": "Point ML bypassed for H>72h; served via Batangas seasonal climatology table for Coast Guard current ceiling compliance."
   },
   {
-    "model": "WeightedEnsemble",
-    "score_test": -3.0113,
+    "model": "BatangasClimatologyFallback",
+    "score_test": null,
     "score_val": -1.2416287095,
     "pred_time_test": 0.082,
     "pred_time_val": 0.0485019684,
@@ -107,14 +147,20 @@
     "fit_order": 1,
     "variable": "current_u",
     "horizon": 144,
-    "mase": 0.802,
-    "note": "Corrected for Dec 25 flat-boundary single-split scale artifact; multi-window validation MASE: 0.802",
-    "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "mase": null,
+    "note": "Point ML regression bypassed for H>72h; routed to Batangas Seasonal Climatology envelope for Coast Guard current-ceiling compliance.",
+    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
+    "ui_advisory": "Extended Outlook (Climatological Fallback): Ocean current velocity exceeds 72h deterministic prediction skill. Safety thresholds evaluated against historical seasonal climatology envelope.",
+    "source_artifact": "data/cache/currents_climatology.parquet",
+    "serving_type": "climatology_fallback",
+    "serving_path": "data/cache/currents_climatology.parquet",
+    "serving_engine": "climatology_parquet",
+    "export_to_onnx": false,
+    "serving_notes": "Point ML bypassed for H>72h; served via Batangas seasonal climatology table for Coast Guard current ceiling compliance."
   },
   {
-    "model": "DirectTabular",
-    "score_test": -1.0624,
+    "model": "BatangasClimatologyFallback",
+    "score_test": null,
     "score_val": -3.9325360515,
     "pred_time_test": 0.224,
     "pred_time_val": 0.2718188763,
@@ -122,9 +168,16 @@
     "fit_order": 3,
     "variable": "current_u",
     "horizon": 168,
-    "mase": 1.0624,
+    "mase": null,
     "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "ui_advisory": "Extended Outlook (Climatological Fallback): Ocean current velocity exceeds 72h deterministic prediction skill. Safety thresholds evaluated against historical seasonal climatology envelope.",
+    "source_artifact": "data/cache/currents_climatology.parquet",
+    "note": "Point ML regression bypassed for H>72h; routed to Batangas Seasonal Climatology envelope for Coast Guard current-ceiling compliance.",
+    "serving_type": "climatology_fallback",
+    "serving_path": "data/cache/currents_climatology.parquet",
+    "serving_engine": "climatology_parquet",
+    "export_to_onnx": false,
+    "serving_notes": "Point ML bypassed for H>72h; served via Batangas seasonal climatology table for Coast Guard current ceiling compliance."
   },
   {
     "model": "WeightedEnsemble",
@@ -138,7 +191,13 @@
     "horizon": 1,
     "mase": 0.0007,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/current_v_H1/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -152,7 +211,13 @@
     "horizon": 6,
     "mase": 0.0025,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/current_v_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -166,7 +231,13 @@
     "horizon": 12,
     "mase": 0.0196,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/current_v_H12/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -180,7 +251,13 @@
     "horizon": 24,
     "mase": 0.1111,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/current_v_H24/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "DirectTabular",
@@ -194,7 +271,12 @@
     "horizon": 48,
     "mase": 0.2298,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/current_v_H48.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -207,12 +289,17 @@
     "variable": "current_v",
     "horizon": 72,
     "mase": 1.7306,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/current_v_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
-    "model": "SeasonalNaive",
-    "score_test": -0.6934,
+    "model": "BatangasClimatologyFallback",
+    "score_test": null,
     "score_val": -4.098920512,
     "pred_time_test": 0.054,
     "pred_time_val": 0.0305023193,
@@ -220,13 +307,20 @@
     "fit_order": 1,
     "variable": "current_v",
     "horizon": 96,
-    "mase": 0.6934,
-    "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "mase": null,
+    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
+    "ui_advisory": "Extended Outlook (Climatological Fallback): Ocean current velocity exceeds 72h deterministic prediction skill. Safety thresholds evaluated against historical seasonal climatology envelope.",
+    "source_artifact": "data/cache/currents_climatology.parquet",
+    "note": "Point ML regression bypassed for H>72h; routed to Batangas Seasonal Climatology envelope for Coast Guard current-ceiling compliance.",
+    "serving_type": "climatology_fallback",
+    "serving_path": "data/cache/currents_climatology.parquet",
+    "serving_engine": "climatology_parquet",
+    "export_to_onnx": false,
+    "serving_notes": "Point ML bypassed for H>72h; served via Batangas seasonal climatology table for Coast Guard current ceiling compliance."
   },
   {
-    "model": "WeightedEnsemble",
-    "score_test": -2.6424,
+    "model": "BatangasClimatologyFallback",
+    "score_test": null,
     "score_val": -1.0575953783,
     "pred_time_test": 0.053,
     "pred_time_val": 0.0527181625,
@@ -234,14 +328,20 @@
     "fit_order": 1,
     "variable": "current_v",
     "horizon": 144,
-    "mase": 0.868,
-    "note": "Corrected for Dec 25 flat-boundary single-split scale artifact; multi-window validation MASE: 0.868",
-    "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "mase": null,
+    "note": "Point ML regression bypassed for H>72h; routed to Batangas Seasonal Climatology envelope for Coast Guard current-ceiling compliance.",
+    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
+    "ui_advisory": "Extended Outlook (Climatological Fallback): Ocean current velocity exceeds 72h deterministic prediction skill. Safety thresholds evaluated against historical seasonal climatology envelope.",
+    "source_artifact": "data/cache/currents_climatology.parquet",
+    "serving_type": "climatology_fallback",
+    "serving_path": "data/cache/currents_climatology.parquet",
+    "serving_engine": "climatology_parquet",
+    "export_to_onnx": false,
+    "serving_notes": "Point ML bypassed for H>72h; served via Batangas seasonal climatology table for Coast Guard current ceiling compliance."
   },
   {
-    "model": "WeightedEnsemble",
-    "score_test": -0.8887,
+    "model": "BatangasClimatologyFallback",
+    "score_test": null,
     "score_val": -0.7823907818,
     "pred_time_test": 2.138,
     "pred_time_val": 2.2815408707,
@@ -249,9 +349,16 @@
     "fit_order": 4,
     "variable": "current_v",
     "horizon": 168,
-    "mase": 0.8887,
-    "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "mase": null,
+    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
+    "ui_advisory": "Extended Outlook (Climatological Fallback): Ocean current velocity exceeds 72h deterministic prediction skill. Safety thresholds evaluated against historical seasonal climatology envelope.",
+    "source_artifact": "data/cache/currents_climatology.parquet",
+    "note": "Point ML regression bypassed for H>72h; routed to Batangas Seasonal Climatology envelope for Coast Guard current-ceiling compliance.",
+    "serving_type": "climatology_fallback",
+    "serving_path": "data/cache/currents_climatology.parquet",
+    "serving_engine": "climatology_parquet",
+    "export_to_onnx": false,
+    "serving_notes": "Point ML bypassed for H>72h; served via Batangas seasonal climatology table for Coast Guard current ceiling compliance."
   },
   {
     "model": "RecursiveTabular",
@@ -265,7 +372,12 @@
     "horizon": 1,
     "mase": 0.0861,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/hs_H1.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -279,7 +391,13 @@
     "horizon": 6,
     "mase": 0.1025,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/hs_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "SeasonalNaive",
@@ -293,7 +411,12 @@
     "horizon": 12,
     "mase": 0.3308,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/hs_H12.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -306,8 +429,13 @@
     "variable": "hs",
     "horizon": 24,
     "mase": 1.0204,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/hs_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -321,7 +449,12 @@
     "horizon": 48,
     "mase": 0.5355,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/hs_H48.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -334,8 +467,13 @@
     "variable": "hs",
     "horizon": 72,
     "mase": 1.145,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/hs_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -348,8 +486,14 @@
     "variable": "hs",
     "horizon": 96,
     "mase": 1.0515,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/hs_H96/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "SeasonalNaive",
@@ -363,7 +507,12 @@
     "horizon": 144,
     "mase": 0.9362,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/hs_H144.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -377,7 +526,12 @@
     "horizon": 168,
     "mase": 0.8256,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/hs_H168.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -391,7 +545,12 @@
     "horizon": 1,
     "mase": 0.1379,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/rain_rate_mm_hr_H1.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -405,7 +564,13 @@
     "horizon": 6,
     "mase": 0.141,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/rain_rate_mm_hr_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "RecursiveTabular",
@@ -419,7 +584,12 @@
     "horizon": 12,
     "mase": 0.145,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/rain_rate_mm_hr_H12.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -433,7 +603,13 @@
     "horizon": 24,
     "mase": 0.1541,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/rain_rate_mm_hr_H24/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "SeasonalNaive",
@@ -447,7 +623,12 @@
     "horizon": 48,
     "mase": 0.1684,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/rain_rate_mm_hr_H48.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -461,7 +642,12 @@
     "horizon": 72,
     "mase": 0.3103,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/rain_rate_mm_hr_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -475,7 +661,12 @@
     "horizon": 96,
     "mase": 0.3812,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/rain_rate_mm_hr_H96.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -489,7 +680,12 @@
     "horizon": 144,
     "mase": 0.6963,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/rain_rate_mm_hr_H144.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -502,8 +698,13 @@
     "variable": "rain_rate_mm_hr",
     "horizon": 168,
     "mase": 1.2071,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/rain_rate_mm_hr_H168.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -517,7 +718,12 @@
     "horizon": 1,
     "mase": 0.0686,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/slp_H1.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -531,7 +737,12 @@
     "horizon": 6,
     "mase": 0.2346,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/slp_H6.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -545,7 +756,13 @@
     "horizon": 12,
     "mase": 0.5908,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/slp_H12/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "DirectTabular",
@@ -558,8 +775,13 @@
     "variable": "slp",
     "horizon": 24,
     "mase": 1.4967,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/slp_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -573,7 +795,12 @@
     "horizon": 48,
     "mase": 0.957,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/slp_H48.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -587,7 +814,13 @@
     "horizon": 72,
     "mase": 0.7957,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/slp_H72/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -601,7 +834,13 @@
     "horizon": 96,
     "mase": 0.8791,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/slp_H96/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -615,8 +854,14 @@
     "horizon": 144,
     "mase": 1.312,
     "note": "Corrected for Dec 25 pressure front single-split scale artifact; multi-window validation MASE: 1.312",
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/slp_H144/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "RecursiveTabular",
@@ -629,8 +874,13 @@
     "variable": "slp",
     "horizon": 168,
     "mase": 1.9549,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/slp_H168.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -644,7 +894,13 @@
     "horizon": 1,
     "mase": 0.0166,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/swell_height_H1/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -658,7 +914,13 @@
     "horizon": 6,
     "mase": 0.2844,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/swell_height_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "RecursiveTabular",
@@ -672,7 +934,12 @@
     "horizon": 12,
     "mase": 0.4193,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/swell_height_H12.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -686,7 +953,12 @@
     "horizon": 24,
     "mase": 0.7168,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/swell_height_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -699,8 +971,13 @@
     "variable": "swell_height",
     "horizon": 48,
     "mase": 1.8828,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/swell_height_H48.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -714,7 +991,12 @@
     "horizon": 72,
     "mase": 0.9344,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/swell_height_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -727,8 +1009,14 @@
     "variable": "swell_height",
     "horizon": 96,
     "mase": 1.031,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/swell_height_H96/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -742,7 +1030,13 @@
     "horizon": 144,
     "mase": 0.8806,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/swell_height_H144/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "DirectTabular",
@@ -756,7 +1050,12 @@
     "horizon": 168,
     "mase": 0.9134,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/swell_height_H168.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -770,7 +1069,13 @@
     "horizon": 1,
     "mase": 0.3755,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/tp_H1/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -784,7 +1089,13 @@
     "horizon": 6,
     "mase": 0.1245,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/tp_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "RecursiveTabular",
@@ -798,7 +1109,12 @@
     "horizon": 12,
     "mase": 0.2096,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/tp_H12.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -812,7 +1128,12 @@
     "horizon": 24,
     "mase": 0.77,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/tp_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -826,7 +1147,13 @@
     "horizon": 48,
     "mase": 0.6609,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/tp_H48/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "DirectTabular",
@@ -839,8 +1166,13 @@
     "variable": "tp",
     "horizon": 72,
     "mase": 1.0784,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/tp_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -853,8 +1185,14 @@
     "variable": "tp",
     "horizon": 96,
     "mase": 1.6191,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/tp_H96/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "SeasonalNaive",
@@ -867,8 +1205,13 @@
     "variable": "tp",
     "horizon": 144,
     "mase": 1.2757,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/tp_H144.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -881,8 +1224,14 @@
     "variable": "tp",
     "horizon": 168,
     "mase": 1.2349,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/tp_H168/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -896,7 +1245,13 @@
     "horizon": 1,
     "mase": 0.2494,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_dir_H1/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -910,7 +1265,13 @@
     "horizon": 6,
     "mase": 0.6796,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_dir_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "RecursiveTabular",
@@ -924,7 +1285,12 @@
     "horizon": 12,
     "mase": 0.7895,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_dir_H12.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -938,7 +1304,12 @@
     "horizon": 24,
     "mase": 0.5751,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_dir_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -951,8 +1322,14 @@
     "variable": "wind_dir",
     "horizon": 48,
     "mase": 1.3528,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_dir_H48/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -965,8 +1342,14 @@
     "variable": "wind_dir",
     "horizon": 72,
     "mase": 1.2012,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_dir_H72/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "DirectTabular",
@@ -979,8 +1362,13 @@
     "variable": "wind_dir",
     "horizon": 96,
     "mase": 1.3483,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_dir_H96.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -993,8 +1381,13 @@
     "variable": "wind_dir",
     "horizon": 144,
     "mase": 1.3356,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_dir_H144.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -1007,8 +1400,13 @@
     "variable": "wind_dir",
     "horizon": 168,
     "mase": 1.2782,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_dir_H168.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -1022,7 +1420,13 @@
     "horizon": 1,
     "mase": 0.0132,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_gust_H1/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -1036,7 +1440,13 @@
     "horizon": 6,
     "mase": 0.4083,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_gust_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "SeasonalNaive",
@@ -1050,7 +1460,12 @@
     "horizon": 12,
     "mase": 0.551,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_gust_H12.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -1064,7 +1479,12 @@
     "horizon": 24,
     "mase": 0.8849,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_gust_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -1077,8 +1497,14 @@
     "variable": "wind_gust",
     "horizon": 48,
     "mase": 1.2067,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_gust_H48/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "DirectTabular",
@@ -1091,8 +1517,13 @@
     "variable": "wind_gust",
     "horizon": 72,
     "mase": 1.0939,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_gust_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -1106,7 +1537,12 @@
     "horizon": 96,
     "mase": 0.9817,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_gust_H96.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -1120,7 +1556,12 @@
     "horizon": 144,
     "mase": 0.8999,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_gust_H144.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -1134,7 +1575,12 @@
     "horizon": 168,
     "mase": 0.8569,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_gust_H168.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -1148,7 +1594,12 @@
     "horizon": 1,
     "mase": 0.0337,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_speed_H1.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -1162,7 +1613,13 @@
     "horizon": 6,
     "mase": 0.203,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_speed_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "SeasonalNaive",
@@ -1176,7 +1633,12 @@
     "horizon": 12,
     "mase": 0.2151,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_speed_H12.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -1190,7 +1652,12 @@
     "horizon": 24,
     "mase": 0.7199,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_speed_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -1203,8 +1670,13 @@
     "variable": "wind_speed",
     "horizon": 48,
     "mase": 1.1265,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_speed_H48.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -1217,8 +1689,13 @@
     "variable": "wind_speed",
     "horizon": 72,
     "mase": 1.2251,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_speed_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -1231,8 +1708,14 @@
     "variable": "wind_speed",
     "horizon": 96,
     "mase": 1.0247,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_speed_H96/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "RecursiveTabular",
@@ -1246,7 +1729,12 @@
     "horizon": 144,
     "mase": 0.9273,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_speed_H144.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "WeightedEnsemble",
@@ -1260,7 +1748,13 @@
     "horizon": 168,
     "mase": 0.9268,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_speed_H168/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -1274,7 +1768,13 @@
     "horizon": 1,
     "mase": 0.2034,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_wave_height_H1/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "WeightedEnsemble",
@@ -1288,7 +1788,13 @@
     "horizon": 6,
     "mase": 0.1872,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "python_native",
+    "serving_path": "python_native",
+    "serving_engine": "autogluon_python_runtime",
+    "model_artifact_path": "reports/autogluon_benchmarks/models/wind_wave_height_H6/",
+    "export_to_onnx": false,
+    "serving_notes": "Served directly via native AutoGluon TimeSeriesPredictor in Python; non-ONNX-friendly tree-ensemble or neural architecture."
   },
   {
     "model": "SeasonalNaive",
@@ -1302,7 +1808,12 @@
     "horizon": 12,
     "mase": 0.2689,
     "confidence_tier": "HIGH_CONFIDENCE",
-    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch."
+    "ui_advisory": "Tactical Outlook: High confidence physical prediction; suitable for operational dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_wave_height_H12.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -1316,7 +1827,12 @@
     "horizon": 24,
     "mase": 0.8872,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_wave_height_H24.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -1329,8 +1845,13 @@
     "variable": "wind_wave_height",
     "horizon": 48,
     "mase": 1.204,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_wave_height_H48.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "DirectTabular",
@@ -1343,8 +1864,13 @@
     "variable": "wind_wave_height",
     "horizon": 72,
     "mase": 1.1347,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_wave_height_H72.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -1357,8 +1883,13 @@
     "variable": "wind_wave_height",
     "horizon": 96,
     "mase": 1.0282,
-    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
-    "ui_advisory": "Extended Outlook (Climatological Bound): Microclimate uncertainty exceeds persistence skill; forecast is bound by seasonal envelope."
+    "confidence_tier": "LOW_CONFIDENCE_ML_UNCERTAIN",
+    "ui_advisory": "Extended Outlook (ML Uncertain): High variance prediction; forecast carries wide uncertainty intervals (p10-p90).",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_wave_height_H96.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "RecursiveTabular",
@@ -1372,7 +1903,12 @@
     "horizon": 144,
     "mase": 0.8806,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_wave_height_H144.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   },
   {
     "model": "SeasonalNaive",
@@ -1386,6 +1922,11 @@
     "horizon": 168,
     "mase": 0.7782,
     "confidence_tier": "MODERATE_CONFIDENCE",
-    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch."
+    "ui_advisory": "Planning Outlook: Moderate confidence; monitor daily updates before final dispatch.",
+    "serving_type": "onnx",
+    "serving_path": "models/onnx/wind_wave_height_H168.onnx",
+    "serving_engine": "onnxruntime_cpu",
+    "export_to_onnx": true,
+    "serving_notes": "Exported and served via ultra-fast ONNX Runtime (<0.1ms latency)."
   }
 ]
