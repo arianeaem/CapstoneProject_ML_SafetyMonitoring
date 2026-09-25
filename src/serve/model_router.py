@@ -247,24 +247,48 @@ class ModelRouter:
             except Exception:
                 pass
 
+    TRAINED_HORIZONS = [1, 6, 12, 24, 48, 72, 96, 144, 168]
+
+    @classmethod
+    def snap_to_closest_horizon(cls, horizon: int) -> int:
+        """
+        Routes continuous lead time H = (target dive timestamp - current timestamp)
+        to whichever of the 9 trained horizon buckets is closest to that H:
+        [1h, 6h, 12h, 24h, 48h, 72h, 96h, 144h, 168h].
+        """
+        h_int = max(1, int(horizon))
+        return min(cls.TRAINED_HORIZONS, key=lambda x: abs(x - h_int))
+
     def get_forecaster(self, variable: str, horizon: int) -> BaseForecaster:
         """Instantiates or returns cached forecaster for given (variable, horizon) pair."""
-        key = (variable, int(horizon))
+        snapped_h = int(horizon) if int(horizon) in self.TRAINED_HORIZONS else self.snap_to_closest_horizon(horizon)
+        key = (variable, snapped_h)
         if key in self._cache:
             return self._cache[key]
 
         if key not in self.registry:
-            raise KeyError(f"No registered model for variable='{variable}' at horizon={horizon}h")
+            # Fallback to climatology envelope beyond the 7-day (168h) trained boundary
+            if int(horizon) > 168:
+                climatology_cfg = {
+                    "serving_type": "climatology_fallback",
+                    "confidence_tier": "LOW_CONFIDENCE_CLIMATOLOGY_BOUND",
+                    "ui_advisory": "Beyond 7-Day ML Horizon (>168h): Batangas Seasonal Climatology envelope.",
+                    "model": "BatangasClimatology",
+                }
+                forecaster = ClimatologyFallbackForecaster(variable, snapped_h, climatology_cfg)
+                self._cache[key] = forecaster
+                return forecaster
+            raise KeyError(f"No registered model for variable='{variable}' at horizon={horizon}h (snapped={snapped_h}h)")
 
         config = self.registry[key]
         serving_type = config.get("serving_type", "onnx")
 
         if serving_type == "onnx":
-            forecaster = OnnxForecaster(variable, horizon, config)
+            forecaster = OnnxForecaster(variable, snapped_h, config)
         elif serving_type == "python_native":
-            forecaster = NativeAutoGluonForecaster(variable, horizon, config)
+            forecaster = NativeAutoGluonForecaster(variable, snapped_h, config)
         elif serving_type == "climatology_fallback":
-            forecaster = ClimatologyFallbackForecaster(variable, horizon, config)
+            forecaster = ClimatologyFallbackForecaster(variable, snapped_h, config)
         else:
             raise ValueError(f"Unknown serving_type: {serving_type} for {key}")
 
@@ -356,16 +380,17 @@ class ModelRouter:
           - STAGE 2 (Atmospheric & Currents): Predict wind speed/gust/dir, SLP, current u/v
           - METADATA ROLLUP: Package sources, confidence tiers, uncertainty spreads, and advisories
         """
+        snapped_h = self.snap_to_closest_horizon(horizon)
         vec = feature_vector.copy()
-        vec[132] = float(horizon)
+        vec[132] = float(snapped_h)
 
         # -------------------------------------------------------------------
         # STAGE 1: Wave Dynamics Sub-Models (routed via registry)
         # -------------------------------------------------------------------
-        hs_q, hs_meta = self.route_quantile_forecast("hs", horizon, vec, target_timestamp)
-        tp_q, tp_meta = self.route_quantile_forecast("tp", horizon, vec, target_timestamp)
-        swell_q, swell_meta = self.route_quantile_forecast("swell_height", horizon, vec, target_timestamp)
-        wind_wave_q, wind_wave_meta = self.route_quantile_forecast("wind_wave_height", horizon, vec, target_timestamp)
+        hs_q, hs_meta = self.route_quantile_forecast("hs", snapped_h, vec, target_timestamp)
+        tp_q, tp_meta = self.route_quantile_forecast("tp", snapped_h, vec, target_timestamp)
+        swell_q, swell_meta = self.route_quantile_forecast("swell_height", snapped_h, vec, target_timestamp)
+        wind_wave_q, wind_wave_meta = self.route_quantile_forecast("wind_wave_height", snapped_h, vec, target_timestamp)
 
         # -------------------------------------------------------------------
         # INTERMEDIATE DERIVATIONS (Satisfying Hydrodynamic Equations)
@@ -378,13 +403,13 @@ class ModelRouter:
         # -------------------------------------------------------------------
         # STAGE 2: Atmospheric & Ocean Currents Sub-Models (routed via registry)
         # -------------------------------------------------------------------
-        ws_q, ws_meta = self.route_quantile_forecast("wind_speed", horizon, vec, target_timestamp)
-        wg_q, wg_meta = self.route_quantile_forecast("wind_gust", horizon, vec, target_timestamp)
-        slp_q, slp_meta = self.route_quantile_forecast("slp", horizon, vec, target_timestamp)
-        wind_dir_q, wind_dir_meta = self.route_quantile_forecast("wind_dir", horizon, vec, target_timestamp)
+        ws_q, ws_meta = self.route_quantile_forecast("wind_speed", snapped_h, vec, target_timestamp)
+        wg_q, wg_meta = self.route_quantile_forecast("wind_gust", snapped_h, vec, target_timestamp)
+        slp_q, slp_meta = self.route_quantile_forecast("slp", snapped_h, vec, target_timestamp)
+        wind_dir_q, wind_dir_meta = self.route_quantile_forecast("wind_dir", snapped_h, vec, target_timestamp)
 
-        cu_q, cu_meta = self.route_quantile_forecast("current_u", horizon, vec, target_timestamp)
-        cv_q, cv_meta = self.route_quantile_forecast("current_v", horizon, vec, target_timestamp)
+        cu_q, cu_meta = self.route_quantile_forecast("current_u", snapped_h, vec, target_timestamp)
+        cv_q, cv_meta = self.route_quantile_forecast("current_v", snapped_h, vec, target_timestamp)
 
         # Resolve current vector to polar speed and direction quantiles
         curr_speed_p50 = float(np.sqrt(cu_q.p50 ** 2 + cv_q.p50 ** 2))
@@ -435,6 +460,9 @@ class ModelRouter:
                 advisories.append(adv)
 
         metadata = {
+            "requested_horizon_hours": int(horizon),
+            "routed_horizon_bucket": snapped_h,
+            "is_beyond_7d_boundary": int(horizon) > 168,
             "sources": {
                 "significant_wave_height_m": hs_meta["source"],
                 "peak_period_s": tp_meta["source"],

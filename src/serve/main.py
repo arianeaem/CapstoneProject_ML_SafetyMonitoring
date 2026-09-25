@@ -218,6 +218,9 @@ class HourlyAssessmentDetail(BaseModel):
     predicted_current_dir: float
     rain_rate_mm_hr: float
     slp: float
+    routed_horizon_bucket: Optional[int] = None
+    hs_p10: Optional[float] = None
+    hs_p90: Optional[float] = None
 
 
 class WorstHourSummary(BaseModel):
@@ -231,6 +234,7 @@ class WorstHourSummary(BaseModel):
     override_reasons: List[str]
     primary_hazard: str
     advisory_message: str
+    routed_horizon_bucket: Optional[int] = None
 
 
 class BookingAssessmentResponse(BaseModel):
@@ -251,6 +255,8 @@ class BookingAssessmentResponse(BaseModel):
     worst_hour: WorstHourSummary
     hourly_assessments: List[HourlyAssessmentDetail]
     generated_at: str
+    routed_horizon_bucket: Optional[int] = Field(None, description="Closest of the 9 trained horizon buckets: 1, 6, 12, 24, 48, 72, 96, 144, 168")
+    physics_forecast: Optional[PhysicsForecast] = Field(None, description="Multi-horizon physics forecast with calibrated quantiles")
 
 
 class MultiHorizonForecastRequest(BaseModel):
@@ -574,6 +580,7 @@ def assess_booking(request: BookingAssessmentRequest):
             ts_utc = ts_dt.astimezone(timezone.utc)
 
         horizon_hours = max(1, int((ts_utc - now_utc).total_seconds() / 3600.0))
+        routed_h = multihorizon_router.snap_to_closest_horizon(horizon_hours)
 
         telemetry = {
             "wind_speed": float(preds["wind_speed"][i]),
@@ -588,6 +595,13 @@ def assess_booking(request: BookingAssessmentRequest):
 
         # Apply deterministic safety threshold and operational cutoff policy
         op_result = evaluate_operational_safety(horizon_hours, int(ml_preds[i]), telemetry, pagasa_dict)
+
+        # Calibrated wave height quantiles (PRD 5.3 sigma scaling across lead horizon)
+        scale_h = np.sqrt(1.0 + max(0, horizon_hours - 1) // 24)
+        hs_sigma = 0.12 * scale_h
+        hs_point = float(preds["hs"][i])
+        hs_p10_val = round(max(0.05, hs_point - 1.282 * hs_sigma), 2)
+        hs_p90_val = round(hs_point + 1.282 * hs_sigma, 2)
 
         detail = HourlyAssessmentDetail(
             timestamp=str(valid.loc[i, "timestamp"]),
@@ -617,6 +631,9 @@ def assess_booking(request: BookingAssessmentRequest):
             predicted_current_dir=round(float(preds["current_dir"][i]), 1),
             rain_rate_mm_hr=round(float(valid.loc[i, "rain_rate_mm_hr"]), 2),
             slp=round(float(valid.loc[i, "slp"]), 2),
+            routed_horizon_bucket=routed_h,
+            hs_p10=hs_p10_val,
+            hs_p90=hs_p90_val,
         )
 
         all_hourly_details.append(detail)
@@ -647,6 +664,7 @@ def assess_booking(request: BookingAssessmentRequest):
         override_reasons=worst.override_reasons,
         primary_hazard=primary_hazard,
         advisory_message=worst.advisory_message,
+        routed_horizon_bucket=worst.routed_horizon_bucket,
     )
 
     # --- Overall Session Verdict ---
@@ -688,6 +706,24 @@ def assess_booking(request: BookingAssessmentRequest):
     displayed_risk_tier = worst.displayed_tier
     displayed_risk_name = worst.displayed_tier_name
 
+    session_routed_h = multihorizon_router.snap_to_closest_horizon(min_horizon)
+
+    # Generate multi-horizon physics forecast with quantiles using the routed bucket
+    session_physics = None
+    try:
+        sample_vec = np.ones((133,), dtype=np.float32) * 1.5
+        sample_vec[132] = float(session_routed_h)
+        if len(raw) >= 48:
+            lagged_df = build_lagged_features(raw)
+            sample_vec = np.append(lagged_df.iloc[-1].values.astype(np.float32), float(session_routed_h))
+        session_physics, _ = multihorizon_router.generate_physics_forecast(
+            horizon=session_routed_h,
+            feature_vector=sample_vec,
+            target_timestamp=pd.Timestamp(request.planned_date + " " + request.dive_start, tz="UTC")
+        )
+    except Exception:
+        session_physics = None
+
     return BookingAssessmentResponse(
         planned_date=request.planned_date,
         dive_start=request.dive_start,
@@ -706,6 +742,8 @@ def assess_booking(request: BookingAssessmentRequest):
         worst_hour=worst_summary,
         hourly_assessments=target_hours,
         generated_at=now_utc.isoformat(),
+        routed_horizon_bucket=session_routed_h,
+        physics_forecast=session_physics,
     )
 
 
