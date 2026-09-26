@@ -88,7 +88,7 @@ def test_model_parity(model_name: str, n_samples: int = 1000, n_features: int = 
 
 def verify_registry_mapping():
     """Verifies that every cell in production_model_selection.json has a valid serving path."""
-    registry_path = PROJECT_ROOT / "reports" / "autogluon_benchmarks" / "v1" / "production_model_selection.json"
+    registry_path = PROJECT_ROOT / "reports" / "autogluon_benchmarks" / "production_model_selection.json"
     with open(registry_path, "r") as f:
         registry = json.load(f)
 

@@ -47,10 +47,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODELS_DIR = PROJECT_ROOT / "models"
 ONNX_DIR = MODELS_DIR / "onnx"
 CACHE_DIR = PROJECT_ROOT / "data" / "cache"
-REGISTRY_PATH = PROJECT_ROOT / "reports" / "autogluon_benchmarks" / "v1" / "production_model_selection.json"
-
-if not REGISTRY_PATH.exists():
-    REGISTRY_PATH = PROJECT_ROOT / "production_model_selection.json"
+REGISTRY_PATH = PROJECT_ROOT / "reports" / "autogluon_benchmarks" / "production_model_selection.json"
 
 
 _SESSION_CACHE: Dict[str, ort.InferenceSession] = {}

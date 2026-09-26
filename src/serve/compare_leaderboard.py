@@ -12,25 +12,25 @@ import json
 import pandas as pd
 from pathlib import Path
 
-PROJECT_ROOT = Path(r"c:\Users\bryan\Capstone_Project\CapstoneProject_ML_SafetyMonitoring")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 LB_PATH = PROJECT_ROOT / "reports" / "autogluon_benchmarks" / "full_leaderboard.csv"
 PROD_JSON_PATH = PROJECT_ROOT / "reports" / "autogluon_benchmarks" / "production_model_selection.json"
-ROOT_PROD_JSON = PROJECT_ROOT / "production_model_selection.json"
+ACTIVE_PROD_JSON = PROD_JSON_PATH if PROD_JSON_PATH.exists() else (PROJECT_ROOT / "production_model_selection.json")
 
 
 def compare_and_evaluate():
     print("=" * 85)
     print("PHASE 0 STEP 5: COMPARATIVE AUDIT — LEADERBOARD WINNERS VS PRODUCTION_MODEL_SELECTION.JSON")
     print(f"Leaderboard Source: {LB_PATH}")
-    print(f"Production Config:  {ROOT_PROD_JSON}")
+    print(f"Production Config:  {ACTIVE_PROD_JSON}")
     print("=" * 85 + "\n")
 
-    if not LB_PATH.exists() or not ROOT_PROD_JSON.exists():
+    if not LB_PATH.exists() or not ACTIVE_PROD_JSON.exists():
         print("Error: Required dataset or config files do not exist.")
         return
 
     full_lb = pd.read_csv(LB_PATH)
-    with open(ROOT_PROD_JSON, "r") as f:
+    with open(ACTIVE_PROD_JSON, "r") as f:
         prod_models = json.load(f)
 
     prod_map = {(r["variable"], r["horizon"]): r for r in prod_models}

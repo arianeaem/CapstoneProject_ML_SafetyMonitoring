@@ -16,11 +16,11 @@ from typing import List, Dict, Any, Tuple
 import numpy as np
 import pandas as pd
 
-PROJECT_ROOT = Path(r"c:\Users\bryan\Capstone_Project\CapstoneProject_ML_SafetyMonitoring")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 LB_PATH = PROJECT_ROOT / "reports" / "autogluon_benchmarks" / "full_leaderboard.csv"
-PROD_JSON_PATH = PROJECT_ROOT / "production_model_selection.json"
+PROD_JSON_PATH = PROJECT_ROOT / "reports" / "autogluon_benchmarks" / "production_model_selection.json"
 ONNX_DIR = PROJECT_ROOT / "models" / "onnx"
 FEATURES_JSON = ONNX_DIR / "forecaster_features.json"
 

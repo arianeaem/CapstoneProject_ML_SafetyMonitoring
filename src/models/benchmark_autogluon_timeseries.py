@@ -19,7 +19,7 @@ import seaborn as sns
 
 from autogluon.timeseries import TimeSeriesDataFrame, TimeSeriesPredictor
 
-PROJECT_ROOT = Path(r"c:\Users\bryan\Capstone_Project\CapstoneProject_ML_SafetyMonitoring")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = PROJECT_ROOT / "data" / "processed" / "historical_11_physics_hourly.parquet"
 REPORTS_DIR = PROJECT_ROOT / "reports" / "autogluon_benchmarks"
 

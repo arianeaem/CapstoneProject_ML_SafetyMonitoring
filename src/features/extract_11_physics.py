@@ -8,10 +8,11 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-PROJECT_ROOT = Path(r"c:\Users\bryan\Capstone_Project\CapstoneProject_ML_SafetyMonitoring")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CANDIDATE_SOURCES = [
-    Path(r"C:\Users\bryan\CapstoneProject_ML\data\interim\collocated.parquet"),
-    Path(r"C:\Users\bryan\Capstone_Project_ML\data\interim\collocated.parquet"),
+    PROJECT_ROOT / "data" / "interim" / "collocated.parquet",
+    PROJECT_ROOT.parent / "CapstoneProject_ML" / "data" / "interim" / "collocated.parquet",
+    PROJECT_ROOT.parent / "Capstone_Project_ML" / "data" / "interim" / "collocated.parquet",
 ]
 
 PHYSICS_VARIABLES = [
