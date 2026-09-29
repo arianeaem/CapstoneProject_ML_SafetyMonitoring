@@ -11,6 +11,7 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CANDIDATE_SOURCES = [
     PROJECT_ROOT / "data" / "interim" / "collocated.parquet",
+    PROJECT_ROOT.parent / "demand-forecast" / "data" / "interim" / "collocated.parquet",
     PROJECT_ROOT.parent / "CapstoneProject_ML" / "data" / "interim" / "collocated.parquet",
     PROJECT_ROOT.parent / "Capstone_Project_ML" / "data" / "interim" / "collocated.parquet",
 ]

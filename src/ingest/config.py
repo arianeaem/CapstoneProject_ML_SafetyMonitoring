@@ -15,20 +15,15 @@ import pandas as pd
 
 
 def _find_project_root() -> Path:
-    """Climbs up from this file's location looking for the .venv folder, which
-    only exists once, at the real project root — this works correctly even if
-    this exact config.py file gets copied somewhere else by accident, unlike a
-    hardcoded parent.parent.parent count."""
+    """Climbs up from this file's location looking for the project root containing data/."""
     current = Path(__file__).resolve().parent
     for _ in range(6):
+        if (current / "data").exists():
+            return current
         if (current / ".venv").exists():
             return current
         current = current.parent
-    raise RuntimeError(
-        "Could not locate project root (looked for a .venv folder within 6 levels up). "
-        "Make sure you're running this from inside the project, and that only one "
-        "config.py exists (check for an accidental duplicate at the project root)."
-    )
+    return Path(__file__).resolve().parents[2]
 
 
 PROJECT_ROOT = _find_project_root()
